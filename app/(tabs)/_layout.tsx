@@ -6,7 +6,7 @@ import Feather from '@expo/vector-icons/Feather';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { StyleSheet, TouchableHighlight, View } from 'react-native';
+import { Image, StyleSheet, TouchableHighlight, View } from 'react-native';
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -27,16 +27,17 @@ export default function TabLayout() {
         headerShown: useClientOnlyValue(false, true),
       }}>
       <Tabs.Screen
-        name="index"
+        name="menuP"
         options={{
-          title: 'Hi Pemandu',
+          headerTitle: 'Hi Pemandu',
+          tabBarLabel: 'Home',
           headerTitleStyle: {
             fontSize: 20,
             fontWeight: 'normal',
             color: 'black',
             padding: 4,
           },
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          tabBarIcon: () => <Image source={require('../../assets/images/home.png')} style={{ width: 30, height: 30 }} />,
           headerRight: () => (
             <TouchableHighlight
               underlayColor="transparent"
@@ -50,10 +51,31 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="notificationP"
         options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          headerTitle: 'Notification',
+          tabBarLabel: 'Notification',
+          headerTitleStyle: {
+            fontSize: 20,
+            fontWeight: 'normal',
+            color: 'black',
+            padding: 4,
+          },
+          tabBarIcon: ({ color }) => <Image source={require('../../assets/images/notification.png')} style={{ width: 30, height: 30 }} />,
+        }}
+      />
+      <Tabs.Screen
+        name="sosP"
+        options={{
+          headerTitle: 'SOS',
+          tabBarLabel: 'SOS',
+          headerTitleStyle: {
+            fontSize: 20,
+            fontWeight: 'normal',
+            color: 'black',
+            padding: 4,
+          },
+          tabBarIcon: ({ color }) => <Image source={require('../../assets/images/SOS.png')} style={{ width: 30, height: 30 }} />,
         }}
       />
     </Tabs>

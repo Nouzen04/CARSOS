@@ -1,5 +1,5 @@
-import { Redirect } from 'expo-router';
+import { Href, Redirect } from 'expo-router';
 
 export default function Index() {
-    return <Redirect href="/login" />;
+    return <Redirect href={"/(tabs)/notificationP" as Href} />;
 }

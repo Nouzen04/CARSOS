@@ -1,7 +1,5 @@
-import { Image, StyleSheet, TouchableOpacity } from 'react-native';
-
 import { Text, View } from '@/components/Themed';
-import { ScrollView } from 'react-native';
+import { Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
 const SERVICES = [
   { id: '1', title: 'Flat Tyre', icon: require('../../assets/images/flat_tyre.png') },
@@ -92,8 +90,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   icon: {
-    width: 60,
-    height: 60,
+    width: 50,
+    height: 50,
     resizeMode: 'contain',
   },
   serviceText: {
@@ -131,8 +129,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   image: {
-    width: 364,
-    height: 200,
+    width: '100%',
+    height: 224,
     resizeMode: 'stretch',
     alignSelf: 'center',
     borderRadius: 8,
