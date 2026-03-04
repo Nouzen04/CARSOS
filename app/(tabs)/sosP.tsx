@@ -1,7 +1,8 @@
 import { Text, View } from '@/components/Themed';
 import Feather from '@expo/vector-icons/Feather';
 import { ScrollView, StyleSheet } from 'react-native';
-export default function TabOneScreen() {
+
+export default function TabThreeScreen() {
     const handleCall = () => {
         console.log('call now');
     };

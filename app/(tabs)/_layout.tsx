@@ -78,6 +78,28 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Image source={require('../../assets/images/SOS.png')} style={{ width: 30, height: 30 }} />,
         }}
       />
+      <Tabs.Screen
+        name="aiP"
+        options={{
+          headerTitle: 'AI',
+          tabBarLabel: 'AI',
+          headerTitleStyle: {
+            fontSize: 20,
+            fontWeight: 'normal',
+            color: 'black',
+            padding: 4,
+          },
+          tabBarIcon: ({ color }) => <Image source={require('../../assets/images/aichatbot.png')} style={{ width: 30, height: 30 }} />,
+        }}
+      />
+      <Tabs.Screen
+        name="bengkelP"
+        options={{
+          headerTitle: 'Bengkel Details',
+          href: null, // Hides the icon from the tab bar
+          tabBarStyle: { display: 'none' }, // Hides the tab bar when on this screen
+        }}
+      />
     </Tabs>
   );
 }

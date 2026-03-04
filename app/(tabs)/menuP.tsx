@@ -1,5 +1,6 @@
 import { Text, View } from '@/components/Themed';
-import { Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { Href, router } from 'expo-router';
+import { Image, ScrollView, StyleSheet, TouchableHighlight, TouchableOpacity } from 'react-native';
 
 const SERVICES = [
   { id: '1', title: 'Flat Tyre', icon: require('../../assets/images/flat_tyre.png') },
@@ -40,9 +41,17 @@ export default function TabOneScreen() {
           <Text style={styles.bengkel}>Bengkel</Text>
         </View>
         <View style={styles.card}>
-          <Image source={require('../../assets/images/benkel.png')} style={styles.image} />
-          <Text style={styles.cardText}>SNS Service</Text>
-          <Text style={styles.cardText}>12 minutes away</Text>{/* map */}
+          <TouchableHighlight
+            underlayColor="#f0f0f0"
+            style={{ borderRadius: 12 }}
+            onPress={() => router.push('/(tabs)/bengkelP' as Href)}
+          >
+            <View>
+              <Image source={require('../../assets/images/benkel.png')} style={styles.image} />
+              <Text style={styles.cardText}>SNS Service</Text>
+              <Text style={styles.cardText}>12 minutes away</Text>{/* map */}
+            </View>
+          </TouchableHighlight>
         </View>
         {/* <EditScreenInfo path="app/(tabs)/index.tsx" /> */}
       </View>
