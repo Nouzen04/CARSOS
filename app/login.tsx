@@ -12,11 +12,16 @@ export default function Login() {
   const signIn = async () => {
     try {
       const user = await signInWithEmailAndPassword(auth, email, password)
-      if (user) router.replace('/(tabs)' as Href);
+      if (user) router.replace('/(tabs)/menuP' as Href);
     } catch (error: any) {
       console.log(error)
       alert('Sign In Failed: ' + error.message)
     }
+  }
+
+  const signInAsBengkel = () => {
+    // Temporary bypass for testing Bengkel layout
+    router.replace('/(bengkel)' as Href);
   }
 
   const signUp = async () => {
@@ -49,7 +54,11 @@ export default function Login() {
           secureTextEntry
         />
         <TouchableOpacity style={styles.Button} onPress={signIn}>
-          <Text style={styles.buttonText}>Sign In</Text>
+          <Text style={styles.buttonText}>Sign In as Driver</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.Button, { backgroundColor: '#ffd54f' }]} onPress={signInAsBengkel}>
+          <Text style={styles.buttonText}>Test Log In Bengkel</Text>
         </TouchableOpacity>
 
         {/* This section is now pinned to the bottom */}

@@ -1,5 +1,5 @@
 import { Href, Redirect } from 'expo-router';
 
 export default function Index() {
-    return <Redirect href={"/(tabs)/menuP" as Href} />;
+    return <Redirect href={"/(bengkel)/profile" as Href} />;
 }
