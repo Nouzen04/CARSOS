@@ -1,77 +1,9 @@
 import { Href, router } from 'expo-router';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { auth } from '../firebase';
-export default function Login() {
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
-  const signIn = async () => {
-    try {
-      const user = await signInWithEmailAndPassword(auth, email, password)
-      if (user) router.replace('/(tabs)/menuP' as Href);
-    } catch (error: any) {
-      console.log(error)
-      alert('Sign In Failed: ' + error.message)
-    }
-  }
-
-  const signInAsBengkel = () => {
-    // Temporary bypass for testing Bengkel layout
-    router.replace('/(bengkel)' as Href);
-  }
-
-  const signUp = async () => {
-    try {
-      const user = await createUserWithEmailAndPassword(auth, email, password)
-      if (user) router.replace('/(tabs)' as Href);
-    } catch (error: any) {
-      console.log(error)
-      alert('Sign Up Failed: ' + error.message)
-    }
-  }
-
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>Welcome to CARSOS</Text>
-        <Text style={styles.subtitle}>Please login </Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        <TouchableOpacity style={styles.Button} onPress={signIn}>
-          <Text style={styles.buttonText}>Sign In as Driver</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.Button, { backgroundColor: '#ffd54f' }]} onPress={signInAsBengkel}>
-          <Text style={styles.buttonText}>Test Log In Bengkel</Text>
-        </TouchableOpacity>
-
-        {/* This section is now pinned to the bottom */}
-        <View style={styles.signUpSection}>
-          <Text style={styles.footerText}>Don't have an account?</Text>
-          <TouchableOpacity onPress={signUp}>
-            <Text style={styles.signUp}>Sign Up</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </SafeAreaView>
-  );
-}
 
 const styles = StyleSheet.create({
   container: {
@@ -85,14 +17,14 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#f8f8f8ff',
   },
-  signUpSection: {
+  loginSection: {
     position: 'absolute',
     bottom: 200, // Distance from the bottom
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
   },
-  signUp: {
+  login: {
     color: '#371dffff',
     fontSize: 14,
     fontWeight: 'bold',
@@ -146,3 +78,62 @@ const styles = StyleSheet.create({
   },
 
 });
+
+export default function loginsignup() {
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const signIn = async () => {
+    try {
+      const user = await signInWithEmailAndPassword(auth, email, password)
+      if (user) router.replace('/(tabs)/menuP' as Href);
+    } catch (error: any) {
+      console.log(error)
+      alert('Sign In Failed: ' + error.message)
+    }
+  }
+
+  const signUp = async () => {
+    try {
+      router.replace('/signup' as Href);
+    } catch (error: any) {
+      console.log(error)
+      alert('Sign Up Failed: ' + error.message)
+    }
+  }
+
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.formContainer}>
+        <Text style={styles.title}>Welcome to CARSOS</Text>
+        <Text style={styles.subtitle}>Please login </Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+        <TouchableOpacity style={styles.Button} onPress={signIn}>
+          <Text style={styles.buttonText}>Log in</Text>
+        </TouchableOpacity>
+
+        {/* This section is now pinned to the bottom */}
+        <View style={styles.loginSection}>
+          <Text style={styles.footerText}>Don't have an account?</Text>
+          <TouchableOpacity onPress={signUp}>
+            <Text style={styles.login}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}

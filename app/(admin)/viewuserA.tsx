@@ -1,4 +1,5 @@
 import React from "react";
+import { CSVLink } from "react-csv";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { DataTable } from "react-native-paper";
 
@@ -42,6 +43,13 @@ export default function ViewUser() {
             address: '123 Main St',
         },
     ]);
+    const headers = [
+        { label: 'Name', key: 'name' },
+        { label: 'Email', key: 'email' },
+        { label: 'Phone', key: 'phone' },
+        { label: 'Address', key: 'address' },
+    ];
+
     const from = page * itemsPerPage;
     const to = Math.min((page + 1) * itemsPerPage, dummy.length);
 
@@ -82,6 +90,11 @@ export default function ViewUser() {
                             theme={{ colors: { onSurface: '#000', onSurfaceVariant: '#000' } }}
                         />
                     </View>
+                </View>
+                <View>
+                    <CSVLink data={dummy} headers={headers} filename={'users.csv'} style={styles.csvLink}>
+                        Export to CSV
+                    </CSVLink>
                 </View>
             </ScrollView>
         </View>
@@ -132,6 +145,15 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#e2e8f0',
         paddingVertical: 4,
+    },
+    csvLink: {
+        color: '#fff',
+        backgroundColor: '#007bff',
+        padding: 10,
+        borderRadius: 5,
+        textAlign: 'center',
+        marginTop: 10,
+        textDecorationLine: 'none',
     },
 });
 
