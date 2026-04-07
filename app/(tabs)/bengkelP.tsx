@@ -1,14 +1,89 @@
 import Feather from '@expo/vector-icons/Feather';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { router } from 'expo-router';
-import { Dimensions, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert } from "react-native";
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { useLocalSearchParams, router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Dimensions, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert, ActivityIndicator } from "react-native";
+import * as Location from 'expo-location';
 import { auth, db } from '../../firebase';
+import { formatDistance, getDistance, getGoogleMapsUrl, getDirectionsUrl } from '../../utils/mapService';
+import MapComponent from '../../components/MapComponent';
 
 const { width } = Dimensions.get('window');
 
 export default function infoBengkel() {
+    const params = useLocalSearchParams();
+    const workshopId = params.id as string || 'SNSService123'; // Fallback for testing
+    
+    const [bengkelData, setBengkelData] = useState<any>(null);
+    const [driverLocation, setDriverLocation] = useState<{ latitude: number, longitude: number } | null>(null);
+    const [distance, setDistance] = useState<number | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchBengkelData();
+        getDriverLocation();
+    }, [workshopId]);
+
+    const fetchBengkelData = async () => {
+        try {
+            const docRef = doc(db, 'users', workshopId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                setBengkelData(docSnap.data());
+            } else {
+                // If not found, use hardcoded data as fallback for now
+                setBengkelData({
+                    name: 'SNS Service',
+                    address: 'No. 12, Jalan Industrial 1/1, Taman Perindustrian Utama, 47100 Puchong, Selangor',
+                    rating: 4.8,
+                    reviews: 120,
+                    description: 'Professional car maintenance and repair services with over 15 years of experience. We specialize in engine diagnostics, major servicing, and suspension work for all major car brands.',
+                    services: [
+                        { name: 'Full Service', icon: 'settings' },
+                        { name: 'Tire Change', icon: 'disc' },
+                        { name: 'Brake Repair', icon: 'tool' },
+                        { name: 'Engine Tune', icon: 'activity' },
+                        { name: 'Oil Service', icon: 'droplet' },
+                        { name: 'Aircond', icon: 'wind' }
+                    ],
+                    facilities: ['Free WiFi', 'Lounge', 'Aircond Room'],
+                    location: { latitude: 3.003, longitude: 101.621 } // Puchong area
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching bengkel:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getDriverLocation = async () => {
+        try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') return;
+
+            const loc = await Location.getCurrentPositionAsync({});
+            setDriverLocation({
+                latitude: loc.coords.latitude,
+                longitude: loc.coords.longitude
+            });
+        } catch (error) {
+            console.error("Error getting driver location:", error);
+        }
+    };
+
+    useEffect(() => {
+        if (driverLocation && bengkelData?.location) {
+            const dist = getDistance(driverLocation, {
+                latitude: bengkelData.location.latitude,
+                longitude: bengkelData.location.longitude
+            });
+            setDistance(dist);
+        }
+    }, [driverLocation, bengkelData]);
+
     const createServiceRequest = async (contactMethod: 'call' | 'whatsapp') => {
         if (!auth.currentUser) {
             Alert.alert("Login Required", "Please sign in to request assistance.");
@@ -18,8 +93,8 @@ export default function infoBengkel() {
         try {
             await addDoc(collection(db, 'service_requests'), {
                 pemanduID: auth.currentUser.uid,
-                bengkelID: 'SNSService123', // Placeholder until dynamic ID is implemented
-                workshopName: 'SNS Service',
+                bengkelID: workshopId,
+                workshopName: bengkelData?.name || 'SNS Service',
                 status: 'Pending',
                 contactMethod: contactMethod,
                 timestamp: serverTimestamp(),
@@ -37,9 +112,23 @@ export default function infoBengkel() {
     };
 
     const handleDirections = () => {
-        // Open Google Maps
-        Linking.openURL('https://www.google.com/maps/search/?api=1&query=SNS+Service+Workshop');
+        if (bengkelData?.location) {
+            const url = driverLocation 
+                ? getDirectionsUrl(driverLocation, { latitude: bengkelData.location.latitude, longitude: bengkelData.location.longitude })
+                : getGoogleMapsUrl(bengkelData.location.latitude, bengkelData.location.longitude, bengkelData.name);
+            Linking.openURL(url);
+        } else {
+            Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bengkelData?.name || 'SNS Service')}`);
+        }
     };
+
+    if (loading) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color="#E31E24" />
+            </View>
+        );
+    }
 
     const handleWhatsApp = async () => {
         await createServiceRequest('whatsapp');
@@ -63,10 +152,10 @@ export default function infoBengkel() {
             <View style={styles.content}>
                 {/* Title and Rating */}
                 <View style={styles.headerRow}>
-                    <Text style={styles.title}>SNS Service</Text>
+                    <Text style={styles.title}>{bengkelData?.name}</Text>
                     <View style={styles.ratingContainer}>
                         <Feather name="star" size={16} color="#FFD700" />
-                        <Text style={styles.ratingText}>4.8 <Text style={styles.reviewCount}>(120 reviews)</Text></Text>
+                        <Text style={styles.ratingText}>{bengkelData?.rating || '4.8'} <Text style={styles.reviewCount}>({bengkelData?.reviews || '120'} reviews)</Text></Text>
                     </View>
                 </View>
 
@@ -76,10 +165,10 @@ export default function infoBengkel() {
                         <Text style={[styles.tagText, { color: '#4CAF50' }]}>Open Now</Text>
                     </View>
                     <View style={styles.tag}>
-                        <Text style={styles.tagText}>12 min away</Text>
+                        <Text style={styles.tagText}>{distance ? formatDistance(distance) : 'Calculating...'} away</Text>
                     </View>
                     <View style={styles.tag}>
-                        <Text style={styles.tagText}>Verified</Text>
+                        <Text style={styles.tagText}>{bengkelData?.verified ? 'Verified' : 'Unverified'}</Text>
                     </View>
                 </View>
 
@@ -91,9 +180,23 @@ export default function infoBengkel() {
                         </View>
                         <View style={styles.infoTextContainer}>
                             <Text style={styles.infoLabel}>Address</Text>
-                            <Text style={styles.infoValue}>No. 12, Jalan Industrial 1/1, Taman Perindustrian Utama, 47100 Puchong, Selangor</Text>
+                            <Text style={styles.infoValue}>{bengkelData?.address}</Text>
                         </View>
                     </View>
+
+                    {/* Map Integration */}
+                    {bengkelData?.location && (
+                        <View style={styles.mapSection}>
+                            <MapComponent 
+                                bengkelLocation={{
+                                    latitude: bengkelData.location.latitude,
+                                    longitude: bengkelData.location.longitude
+                                }}
+                                driverLocation={driverLocation}
+                                bengkelName={bengkelData.name}
+                            />
+                        </View>
+                    )}
 
                     <View style={styles.infoRow}>
                         <View style={styles.iconCircle}>
@@ -111,7 +214,7 @@ export default function infoBengkel() {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>About this Workshop</Text>
                     <Text style={styles.description}>
-                        Professional car maintenance and repair services with over 15 years of experience. We specialize in engine diagnostics, major servicing, and suspension work for all major car brands.
+                        {bengkelData?.description}
                     </Text>
                 </View>
 
@@ -119,14 +222,7 @@ export default function infoBengkel() {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Services Offered</Text>
                     <View style={styles.servicesGrid}>
-                        {[
-                            { name: 'Full Service', icon: 'settings' },
-                            { name: 'Tire Change', icon: 'disc' },
-                            { name: 'Brake Repair', icon: 'tool' },
-                            { name: 'Engine Tune', icon: 'activity' },
-                            { name: 'Oil Service', icon: 'droplet' },
-                            { name: 'Aircond', icon: 'wind' }
-                        ].map((item, index) => (
+                        {(bengkelData?.services || []).map((item: any, index: number) => (
                             <View key={index} style={styles.serviceItem}>
                                 <Feather name={item.icon as any} size={20} color="#333" />
                                 <Text style={styles.serviceName}>{item.name}</Text>
@@ -139,18 +235,12 @@ export default function infoBengkel() {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Facilities</Text>
                     <View style={styles.facilitiesRow}>
-                        <View style={styles.facility}>
-                            <Feather name="wifi" size={16} color="#666" />
-                            <Text style={styles.facilityText}>Free WiFi</Text>
-                        </View>
-                        <View style={styles.facility}>
-                            <Feather name="coffee" size={16} color="#666" />
-                            <Text style={styles.facilityText}>Lounge</Text>
-                        </View>
-                        <View style={styles.facility}>
-                            <Feather name="thermometer" size={16} color="#666" />
-                            <Text style={styles.facilityText}>Aircond Room</Text>
-                        </View>
+                        {(bengkelData?.facilities || []).map((facility: string, index: number) => (
+                            <View key={index} style={styles.facility}>
+                                <Feather name="check-circle" size={14} color="#4CAF50" />
+                                <Text style={styles.facilityText}>{facility}</Text>
+                            </View>
+                        ))}
                     </View>
                 </View>
             </View>
@@ -282,6 +372,19 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#333',
         lineHeight: 20,
+        marginBottom: 12,
+    },
+    mapSection: {
+        height: 180,
+        width: '100%',
+        borderRadius: 12,
+        overflow: 'hidden',
+        marginTop: 8,
+        borderWidth: 1,
+        borderColor: '#eee',
+    },
+    map: {
+        ...StyleSheet.absoluteFillObject,
     },
     section: {
         marginTop: 24,

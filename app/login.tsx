@@ -1,9 +1,9 @@
 import { Href, router } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import React, { useState } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 const styles = StyleSheet.create({
@@ -98,7 +98,7 @@ export default function loginsignup() {
       if (user) {
         // Fetch user data for role-based navigation
         const userDoc = await getDoc(doc(db, "users", user.uid));
-        
+
         if (userDoc.exists()) {
           const userData = userDoc.data();
           const role = userData.role;

@@ -1,66 +1,82 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { DataTable } from "react-native-paper";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert } from "react-native";
+import { collection, query, where, onSnapshot, updateDoc, doc, deleteDoc } from "firebase/firestore";
+import { db } from "../../firebase";
 
 export default function ManageWorkshop() {
     const [page, setPage] = React.useState<number>(0);
-    const [numberOfItemsPerPageList] = React.useState([3, 5, 10]);
-    const [itemsPerPage, onItemsPerPageChange] = React.useState(numberOfItemsPerPageList[0]);
+    const itemsPerPage = 5;
 
-    const [workshops, setWorkshops] = React.useState([
-        {
-            key: 1,
-            orgName: 'AutoFix Mechanics',
-            address: '123 Engine Blvd, Motor City',
-            contact: '012-3456789',
-            status: 'Pending',
-        },
-        {
-            key: 2,
-            orgName: 'Speedy Tyres & Services',
-            address: '45 Wheel Array, Auto Town',
-            contact: '019-8765432',
-            status: 'Pending',
-        },
-        {
-            key: 3,
-            orgName: 'Pro Care Auto',
-            address: '78 Spark Plug Street, Gear City',
-            contact: '011-2345678',
-            status: 'Pending',
-        },
-        {
-            key: 4,
-            orgName: 'Elite Motors Bengkel',
-            address: '99 Turbo Ave, Central Dist',
-            contact: '016-5554443',
-            status: 'Pending',
-        },
-    ]);
+    const [workshops, setWorkshops] = React.useState<any[]>([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        // Listen to all bengkel users that are NOT yet verified
+        const q = query(
+            collection(db, "users"),
+            where("role", "==", "bengkel"),
+            where("verified", "==", false)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const list = snapshot.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+            }));
+            setWorkshops(list);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching workshops:", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, []);
 
     const from = page * itemsPerPage;
     const to = Math.min((page + 1) * itemsPerPage, workshops.length);
-
-    React.useEffect(() => {
-        setPage(0);
-    }, [itemsPerPage]);
+    const totalPages = Math.ceil(workshops.length / itemsPerPage);
 
     const handleViewFiles = (orgName: string) => {
-        console.log(`Viewing forms and files for ${orgName}`);
-        alert(`Opening verification documents for ${orgName}...`);
+        Alert.alert("Files", `No files uploaded yet for ${orgName}.\n\nThis feature will allow admins to view submitted documents.`);
     };
 
-    const handleConfirm = (key: number, orgName: string) => {
-        setWorkshops(workshops.filter(w => w.key !== key));
-        console.log(`Confirmed workshop: ${orgName}`);
-        alert(`${orgName} has been verified and confirmed!`);
+    const handleConfirm = async (userId: string, orgName: string) => {
+        try {
+            await updateDoc(doc(db, "users", userId), {
+                verified: true
+            });
+            Alert.alert("✅ Verified", `${orgName} has been verified and confirmed!`);
+        } catch (error) {
+            console.error("Error confirming workshop:", error);
+            Alert.alert("Error", "Failed to verify workshop. Please try again.");
+        }
     };
 
-    const handleReject = (key: number, orgName: string) => {
-        setWorkshops(workshops.filter(w => w.key !== key));
-        console.log(`Rejected workshop: ${orgName}`);
-        alert(`${orgName} has been rejected!`);
+    const handleReject = async (userId: string, orgName: string) => {
+        Alert.alert(
+            "Reject Workshop",
+            `Are you sure you want to reject ${orgName}? This will delete their account.`,
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Reject",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await deleteDoc(doc(db, "users", userId));
+                            Alert.alert("Rejected", `${orgName} has been rejected and removed.`);
+                        } catch (error) {
+                            console.error("Error rejecting workshop:", error);
+                            Alert.alert("Error", "Failed to reject workshop.");
+                        }
+                    }
+                }
+            ]
+        );
     };
+
+    const paginated = workshops.slice(from, to);
 
     return (
         <View style={styles.container}>
@@ -71,63 +87,100 @@ export default function ManageWorkshop() {
                     <Text style={styles.screenSubtitle}>Review submitted forms and files to verify workshop credibility.</Text>
                 </View>
 
-                <View style={styles.DataTableWrapper}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-                        <DataTable>
-                            <DataTable.Header style={styles.DataTableHeader}>
-                                <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 2 }}>Organisation</DataTable.Title>
-                                <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 3 }}>Address</DataTable.Title>
-                                <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 2 }}>Contact</DataTable.Title>
-                                <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 2.5, right: 0, justifyContent: 'center' }}>Actions</DataTable.Title>
-                            </DataTable.Header>
-
-                            {workshops.slice(from, to).map((item) => (
-                                <DataTable.Row key={item.key} style={styles.DataTableRow}>
-                                    <DataTable.Cell textStyle={styles.cellTextStyle} style={{ flex: 2 }}>{item.orgName}</DataTable.Cell>
-                                    <DataTable.Cell textStyle={styles.cellTextStyle} style={{ flex: 3 }}>{item.address}</DataTable.Cell>
-                                    <DataTable.Cell textStyle={styles.cellTextStyle} style={{ flex: 2 }}>{item.contact}</DataTable.Cell>
-                                    <DataTable.Cell style={{ flex: 2.5, justifyContent: 'center', alignItems: 'center' }}>
-                                        <View style={styles.actionButtons}>
-                                            <TouchableOpacity
-                                                style={[styles.btn, styles.viewBtn]}
-                                                onPress={() => handleViewFiles(item.orgName)}
-                                            >
-                                                <Text style={styles.btnText}>Files</Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                style={[styles.btn, styles.confirmBtn]}
-                                                onPress={() => handleConfirm(item.key, item.orgName)}
-                                            >
-                                                <Text style={styles.btnText}>Confirm</Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                style={[styles.btn, styles.rejectBtn]}
-                                                onPress={() => handleReject(item.key, item.orgName)}
-                                            >
-                                                <Text style={styles.btnText}>Reject</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    </DataTable.Cell>
-                                </DataTable.Row>
-                            ))}
-                        </DataTable>
-                    </ScrollView>
-
-                    <View style={styles.paginationContainer}>
-                        <DataTable.Pagination
-                            page={page}
-                            numberOfPages={Math.ceil(workshops.length / itemsPerPage)}
-                            onPageChange={(page) => setPage(page)}
-                            label={`${from + 1}-${to} of ${workshops.length}`}
-                            numberOfItemsPerPageList={numberOfItemsPerPageList}
-                            onItemsPerPageChange={onItemsPerPageChange}
-                            numberOfItemsPerPage={itemsPerPage}
-                            showFastPaginationControls
-                            selectPageDropdownLabel={'Rows per page'}
-                            theme={{ colors: { onSurface: '#000', onSurfaceVariant: '#000' } }}
-                        />
+                {loading ? (
+                    <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 60 }} />
+                ) : workshops.length === 0 ? (
+                    <View style={styles.emptyState}>
+                        <Text style={styles.emptyText}>No pending registrations.</Text>
                     </View>
-                </View>
+                ) : (
+                    paginated.map((item) => (
+                        <View key={item.id} style={styles.card}>
+                            {/* Status badge */}
+                            <View style={styles.statusBadge}>
+                                <Text style={styles.statusBadgeText}>Pending</Text>
+                            </View>
+
+                            {/* Workshop details */}
+                            <Text style={styles.orgName}>{item.name || 'Unnamed Workshop'}</Text>
+
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>📧 Email</Text>
+                                <Text style={styles.detailValue}>{item.email}</Text>
+                            </View>
+
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>📍 Address</Text>
+                                <Text style={styles.detailValue}>{item.address || 'Not provided'}</Text>
+                            </View>
+
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>📞 Phone</Text>
+                                <Text style={styles.detailValue}>{item.phone || 'Not provided'}</Text>
+                            </View>
+
+                            {item.selectedServices && item.selectedServices.length > 0 && (
+                                <View style={styles.detailRow}>
+                                    <Text style={styles.detailLabel}>🔧 Services</Text>
+                                    <Text style={styles.detailValue}>{item.selectedServices.length} service(s) offered</Text>
+                                </View>
+                            )}
+
+                            {/* Divider */}
+                            <View style={styles.divider} />
+
+                            {/* Action buttons */}
+                            <View style={styles.actionRow}>
+                                <TouchableOpacity
+                                    style={[styles.btn, styles.viewBtn]}
+                                    onPress={() => handleViewFiles(item.name)}
+                                >
+                                    <Text style={styles.btnText}>📄 Files</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.btn, styles.confirmBtn]}
+                                    onPress={() => handleConfirm(item.id, item.name)}
+                                >
+                                    <Text style={styles.btnText}>✓ Confirm</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.btn, styles.rejectBtn]}
+                                    onPress={() => handleReject(item.id, item.name)}
+                                >
+                                    <Text style={styles.btnText}>✕ Reject</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    ))
+                )}
+
+                {/* Pagination */}
+                {!loading && workshops.length > itemsPerPage && (
+                    <View style={styles.pagination}>
+                        <TouchableOpacity
+                            style={[styles.pageBtn, page === 0 && styles.pageBtnDisabled]}
+                            onPress={() => setPage(p => Math.max(0, p - 1))}
+                            disabled={page === 0}
+                        >
+                            <Text style={[styles.pageBtnText, page === 0 && styles.pageBtnTextDisabled]}>‹ Prev</Text>
+                        </TouchableOpacity>
+
+                        <Text style={styles.pageInfo}>
+                            {from + 1}–{to} of {workshops.length}
+                        </Text>
+
+                        <TouchableOpacity
+                            style={[styles.pageBtn, page >= totalPages - 1 && styles.pageBtnDisabled]}
+                            onPress={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                            disabled={page >= totalPages - 1}
+                        >
+                            <Text style={[styles.pageBtnText, page >= totalPages - 1 && styles.pageBtnTextDisabled]}>Next ›</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
             </ScrollView>
         </View>
     );
@@ -140,6 +193,7 @@ const styles = StyleSheet.create({
     },
     scrollContainer: {
         padding: 16,
+        paddingBottom: 32,
     },
     headerContainer: {
         marginBottom: 20,
@@ -155,58 +209,74 @@ const styles = StyleSheet.create({
         color: '#64748b',
         marginTop: 6,
     },
-    DataTableWrapper: {
-        backgroundColor: '#fff',
+
+    // Card
+    card: {
+        backgroundColor: '#ffffff',
         borderRadius: 16,
-        overflow: 'hidden',
-        elevation: 4,
+        padding: 16,
+        marginBottom: 14,
+        elevation: 3,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.07,
         shadowRadius: 8,
     },
-    DataTableHeader: {
-        backgroundColor: '#f1f5f9',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e2e8f0',
-        paddingHorizontal: 12,
-        minHeight: 56,
+    statusBadge: {
+        alignSelf: 'flex-start',
+        backgroundColor: '#FEF3C7',
+        borderRadius: 20,
+        paddingVertical: 3,
+        paddingHorizontal: 10,
+        marginBottom: 10,
     },
-    headerTextStyle: {
-        color: '#475569',
-        fontWeight: 'bold',
-        fontSize: 13,
+    statusBadgeText: {
+        color: '#D97706',
+        fontSize: 11,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
-    DataTableRow: {
-        borderBottomWidth: 1,
-        borderBottomColor: '#f1f5f9',
-        paddingHorizontal: 12,
-        minHeight: 70,
-    },
-    cellTextStyle: {
+    orgName: {
+        fontSize: 17,
+        fontWeight: '700',
         color: '#1e293b',
+        marginBottom: 10,
+    },
+    detailRow: {
+        flexDirection: 'row',
+        marginBottom: 6,
+        alignItems: 'flex-start',
+        gap: 8,
+    },
+    detailLabel: {
         fontSize: 13,
+        color: '#64748b',
+        width: 90,
     },
-    paginationContainer: {
-        backgroundColor: '#fff',
-        borderTopWidth: 1,
-        borderTopColor: '#e2e8f0',
-        paddingVertical: 4,
+    detailValue: {
+        fontSize: 13,
+        color: '#334155',
+        flex: 1,
+        fontWeight: '500',
     },
-    actionButtons: {
+    divider: {
+        height: 1,
+        backgroundColor: '#e2e8f0',
+        marginVertical: 12,
+    },
+
+    // Action buttons row
+    actionRow: {
         flexDirection: 'row',
         gap: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
     },
     btn: {
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 6,
-        justifyContent: 'center',
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 10,
         alignItems: 'center',
-        elevation: 1,
+        justifyContent: 'center',
     },
     viewBtn: {
         backgroundColor: '#3b82f6',
@@ -214,12 +284,56 @@ const styles = StyleSheet.create({
     confirmBtn: {
         backgroundColor: '#10b981',
     },
+    rejectBtn: {
+        backgroundColor: '#ef4444',
+    },
     btnText: {
         color: '#ffffff',
         fontSize: 12,
-        fontWeight: '600',
+        fontWeight: '700',
     },
-    rejectBtn: {
-        backgroundColor: '#ef4444',
+
+    // Pagination
+    pagination: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 8,
+        paddingHorizontal: 4,
+    },
+    pageBtn: {
+        backgroundColor: '#fff',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+        elevation: 1,
+    },
+    pageBtnDisabled: {
+        opacity: 0.4,
+    },
+    pageBtnText: {
+        color: '#1e293b',
+        fontWeight: '600',
+        fontSize: 13,
+    },
+    pageBtnTextDisabled: {
+        color: '#94a3b8',
+    },
+    pageInfo: {
+        color: '#64748b',
+        fontSize: 13,
+        fontWeight: '500',
+    },
+
+    // Empty state
+    emptyState: {
+        alignItems: 'center',
+        marginTop: 60,
+    },
+    emptyText: {
+        color: '#94a3b8',
+        fontSize: 16,
     },
 });

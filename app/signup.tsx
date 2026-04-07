@@ -2,12 +2,13 @@ import Feather from '@expo/vector-icons/Feather';
 import { Checkbox } from 'expo-checkbox';
 import { Href, router } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc, GeoPoint } from "firebase/firestore";
 import { useState } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from "react-native";
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator, ScrollView } from "react-native";
 import DropDownPicker from 'react-native-dropdown-picker';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
+import { getCurrentLocation, toGeoPoint } from "../utils/mapService";
 
 interface Service {
     id: number;
@@ -20,11 +21,14 @@ export default function signup() {
     const [password, setPassword] = useState('');
     const [phone, setPhone] = useState('');
     const [name, setName] = useState('');
+    const [workshopName, setWorkshopName] = useState('');
     const [address, setAddress] = useState('');
     const [serviceType, setServiceType] = useState('');
     const [facilities, setFacilities] = useState('');
     const [description, setDescription] = useState('');
     const [role, setRole] = useState(null);
+    const [location, setLocation] = useState<{ latitude: number, longitude: number } | null>(null);
+    const [loadingLocation, setLoadingLocation] = useState(false);
     const [open, setOpen] = useState(false);
     const [items, setItems] = useState([
         { label: 'Pemandu', value: 'pemandu' },
@@ -36,6 +40,18 @@ export default function signup() {
         setSelectedServices(prev =>
             prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
         );
+    };
+
+    const handleGetLocation = async () => {
+        setLoadingLocation(true);
+        const loc = await getCurrentLocation();
+        setLoadingLocation(false);
+        if (loc) {
+            setLocation(loc);
+            Alert.alert("Success", "Location captured successfully!");
+        } else {
+            Alert.alert("Error", "Could not get your location. Please check your GPS settings.");
+        }
     };
 
     const signUp = async () => {
@@ -60,16 +76,29 @@ export default function signup() {
                 };
 
                 if (role === 'bengkel') {
+                    userData.name = workshopName; 
                     userData.address = address;
                     userData.selectedServices = selectedServices;
                     userData.facilities = facilities;
                     userData.description = description;
+                    userData.verified = false; 
+                    if (location) {
+                        userData.location = toGeoPoint(location);
+                    }
                 }
 
                 await setDoc(doc(db, "users", user.uid), userData);
-                
+
                 Alert.alert("Success", "Account created successfully!");
-                router.replace('/(tabs)/menuP' as Href);
+                
+                // Role-based navigation
+                if (role === 'bengkel') {
+                    router.replace('/(bengkel)/menuD' as Href);
+                } else if (role === 'admin') {
+                    router.replace('/(admin)/menuA' as Href);
+                } else {
+                    router.replace('/(tabs)/menuP' as Href);
+                }
             }
         } catch (error: any) {
             console.log(error);
@@ -113,9 +142,9 @@ export default function signup() {
                     placeholder="Phone No"
                     value={phone}
                     onChangeText={setPhone}
-                    secureTextEntry
+                    keyboardType="phone-pad"
                 />
-                <TouchableOpacity style={styles.Button} onPress={signUp} disabled={true}>
+                <TouchableOpacity style={styles.Button} onPress={signUp}>
                     <Text style={styles.buttonText}>Sign Up</Text>
                 </TouchableOpacity>
             </SafeAreaView>
@@ -128,8 +157,8 @@ export default function signup() {
                 <TextInput
                     style={styles.input}
                     placeholder="Workshop Name"
-                    value={name}
-                    onChangeText={setName}
+                    value={workshopName}
+                    onChangeText={setWorkshopName}
                 />
                 <TextInput
                     style={styles.input}
@@ -149,15 +178,31 @@ export default function signup() {
                     placeholder="Phone No"
                     value={phone}
                     onChangeText={setPhone}
-                    secureTextEntry
+                    keyboardType="phone-pad"
                 />
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, { height: 80 }]}
                     placeholder="Address"
                     value={address}
                     onChangeText={setAddress}
-                    secureTextEntry
+                    multiline
                 />
+                 <TouchableOpacity 
+                    style={[styles.locationButton, location ? { backgroundColor: '#4CAF50' } : null]} 
+                    onPress={handleGetLocation}
+                    disabled={loadingLocation}
+                >
+                    {loadingLocation ? (
+                        <ActivityIndicator color="white" />
+                    ) : (
+                        <>
+                            <Feather name="map-pin" size={18} color="white" />
+                            <Text style={styles.locationButtonText}>
+                                {location ? "Location Captured" : "Use My Current Location"}
+                            </Text>
+                        </>
+                    )}
+                </TouchableOpacity>
                 <Text style={styles.label}>Service Types</Text>
                 <View style={styles.servicesGrid}>
                     {SERVICE.map((item: Service) => (
@@ -182,14 +227,13 @@ export default function signup() {
                     placeholder="Facilities"
                     value={facilities}
                     onChangeText={setFacilities}
-                    secureTextEntry
                 />
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, { height: 100 }]}
                     placeholder="Description"
                     value={description}
                     onChangeText={setDescription}
-                    secureTextEntry
+                    multiline
                 />
                 <TouchableOpacity style={styles.Button} onPress={signUp}>
                     <Text style={styles.buttonText}>Sign Up</Text>
@@ -217,7 +261,7 @@ export default function signup() {
                 />
 
                 {role === 'pemandu' && pemandu()}
-                {role === 'bengkel' && bengkel()}
+                {role === 'bengkel' && <ScrollView showsVerticalScrollIndicator={false}>{bengkel()}</ScrollView>}
 
                 <View style={styles.signUpSection}>
                     <Text style={styles.footerText}>Already have an account?</Text>
@@ -357,6 +401,23 @@ const styles = StyleSheet.create({
         marginLeft: 8,
         fontSize: 14,
         color: '#333',
+    },
+    locationButton: {
+        backgroundColor: '#4630EB',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 12,
+        borderRadius: 10,
+        width: '90%',
+        alignSelf: 'center',
+        marginBottom: 15,
+        gap: 8,
+    },
+    locationButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 14,
     },
 
 });
