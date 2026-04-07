@@ -1,9 +1,10 @@
 import { Href, router } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { auth } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
 const styles = StyleSheet.create({
   container: {
@@ -85,12 +86,39 @@ export default function loginsignup() {
   const [password, setPassword] = useState('');
 
   const signIn = async () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Please enter your email and password.");
+      return;
+    }
+
     try {
-      const user = await signInWithEmailAndPassword(auth, email, password)
-      if (user) router.replace('/(tabs)/menuP' as Href);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      if (user) {
+        // Fetch user data for role-based navigation
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const role = userData.role;
+
+          if (role === 'admin') {
+            router.replace('/(admin)/menuA' as Href);
+          } else if (role === 'bengkel') {
+            router.replace('/(bengkel)/menuD' as Href);
+          } else {
+            // Default to pemandu (tabs)
+            router.replace('/(tabs)/menuP' as Href);
+          }
+        } else {
+          // If no doc exists, default to tabs
+          router.replace('/(tabs)/menuP' as Href);
+        }
+      }
     } catch (error: any) {
-      console.log(error)
-      alert('Sign In Failed: ' + error.message)
+      console.log(error);
+      Alert.alert('Sign In Failed', error.message);
     }
   }
 

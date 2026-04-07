@@ -1,37 +1,104 @@
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useEffect, useState } from 'react';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { auth, db } from '../../firebase';
 
-export default function TabTwoScreen() {
+export default function NotificationScreen() {
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!auth.currentUser) {
+      setLoading(false);
+      return;
+    }
+
+    // Listener for service requests relating to this driver
+    const q = query(
+      collection(db, 'service_requests'),
+      where('pemanduID', '==', auth.currentUser.uid),
+      orderBy('timestamp', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setNotifications(list);
+      setLoading(false);
+    }, (error) => {
+      console.error("Notification listener error:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const getStatusMessage = (status: string, workshop: string) => {
+    switch (status) {
+      case 'Pending':
+        return `Your request to ${workshop} is pending. Please wait for a response.`;
+      case 'Accepted':
+        return `Good news! ${workshop} has accepted your request and is coming to help.`;
+      case 'Cancelled':
+        return `Sorry, ${workshop} was unable to take your request. Please try another workshop.`;
+      case 'Completed':
+        return `Your service with ${workshop} has been completed.`;
+      default:
+        return `Your request to ${workshop} is currently ${status}.`;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Pending': return '#F39C12'; // Orange
+      case 'Accepted': return '#27AE60'; // Green
+      case 'Cancelled': return '#E74C3C'; // Red
+      case 'Completed': return '#2980B9'; // Blue
+      default: return '#7F8C8D';
+    }
+  };
+
   return (
     <ScrollView style={styles.scrollView}>
       <SafeAreaView style={styles.container}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => console.log(`Card clicked!`)}>
-          <View style={styles.card}>
-            <View>
-              <Image source={require('../../assets/images/wrench.png')} style={styles.icon} />
-            </View>
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>Card Title</Text>
-              <Text style={styles.cardText}>Assumenda ipsum veritatis, enim magnam sit officia dignissimos. Sequi illo quae provident at doloremque itaque, magnam laudantium! Velit, quisquam est? Vel.</Text>
-            </View>
-            <View style={styles.circleContainer}>
-              <Text style={styles.circleInfo}>12{'\n'}mins</Text>
-            </View>
+        <Text style={styles.pageTitle}>Notifications</Text>
+        
+        {loading ? (
+          <ActivityIndicator size="large" color="#8baaff" style={{ marginTop: 50 }} />
+        ) : (
+          <View style={{ width: '100%', alignItems: 'center' }}>
+            {notifications.length > 0 ? (
+              notifications.map((notif) => (
+                <View key={notif.id} style={styles.card}>
+                  <View style={styles.iconContainer}>
+                    <Image 
+                      source={require('../../assets/images/wrench.png')} 
+                      style={[styles.icon, { tintColor: getStatusColor(notif.status) }]} 
+                      resizeMode="contain" 
+                    />
+                  </View>
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle}>{notif.workshopName || 'Service Update'}</Text>
+                    <Text style={styles.cardText}>{getStatusMessage(notif.status, notif.workshopName)}</Text>
+                    <Text style={styles.timeText}>
+                      {notif.timestamp?.toDate().toLocaleString()}
+                    </Text>
+                  </View>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(notif.status) }]}>
+                    <Text style={styles.statusText}>{notif.status}</Text>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>No notifications yet.</Text>
+              </View>
+            )}
           </View>
-        </TouchableOpacity>
-        <View style={styles.card}>
-          <View>
-            <Image source={require('../../assets/images/wrench.png')} style={styles.icon} />
-          </View>
-          <View style={styles.cardContent}>
-            <Text style={styles.cardText}>Your mechanic has notify your problem. please wait for a while</Text>
-          </View>
-          <View style={styles.circleContainer}>
-            <Text style={styles.circleInfo}>12{'\n'}mins</Text>
-          </View>
-        </View>
+        )}
       </SafeAreaView>
     </ScrollView>
   );
@@ -41,77 +108,85 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
+    paddingHorizontal: 16,
   },
   scrollView: {
-    backgroundColor: '#fff',
+    backgroundColor: '#F8F9FA',
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'normal',
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
     color: '#1a1a1a',
-    lineHeight: 24,
-  },
-  cardContent: {
-    flexDirection: 'column',
-    flex: 1,
-    paddingLeft: 16,
-    textAlign: 'auto',
+    alignSelf: 'flex-start',
+    marginVertical: 20,
+    marginLeft: 10,
   },
   card: {
-    width: 388,
+    width: '100%',
     backgroundColor: 'white',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    marginTop: 25,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    marginBottom: 16,
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    overflow: 'hidden',
-    // For Android (Shadow)
-    elevation: 4,
-
-    // For iOS (Shadow)
+    alignItems: 'center',
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  iconContainer: {
+    backgroundColor: '#F0F4F8',
+    padding: 12,
+    borderRadius: 12,
+  },
+  cardContent: {
+    flex: 1,
+    paddingLeft: 16,
+    paddingRight: 40, // Space for badge
   },
   cardTitle: {
-    fontSize: 20,
-    fontWeight: 'normal',
+    fontSize: 16,
+    fontWeight: 'bold',
     color: '#1a1a1a',
-    lineHeight: 24,
-    marginLeft: 4,
+    marginBottom: 4,
   },
   cardText: {
-    fontSize: 15,
-    fontWeight: 'normal',
-    color: '#1a1a1a',
-    lineHeight: 24,
-    marginLeft: 4,
+    fontSize: 13,
+    color: '#666',
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  timeText: {
+    fontSize: 11,
+    color: '#999',
+  },
+  statusBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderBottomLeftRadius: 12,
+  },
+  statusText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
   },
   icon: {
-    width: 50,
-    height: 50,
-    resizeMode: 'contain',
+    width: 32,
+    height: 32,
   },
-  circleInfo: {
-    fontSize: 15,
-    fontWeight: 'normal',
-    color: '#1a1a1a',
-    textAlign: 'center',
-    overflow: 'hidden',
-  },
-  circleContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#8baaff',
-    justifyContent: 'center',
+  emptyState: {
+    marginTop: 60,
     alignItems: 'center',
-    overflow: 'hidden',
-    marginLeft: 20,
+  },
+  emptyText: {
+    color: '#999',
+    fontSize: 16,
   },
 });
-

@@ -2,12 +2,37 @@ import Feather from '@expo/vector-icons/Feather';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
-import { Dimensions, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert } from "react-native";
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '../../firebase';
 
 const { width } = Dimensions.get('window');
 
 export default function infoBengkel() {
-    const handleCall = () => {
+    const createServiceRequest = async (contactMethod: 'call' | 'whatsapp') => {
+        if (!auth.currentUser) {
+            Alert.alert("Login Required", "Please sign in to request assistance.");
+            return;
+        }
+
+        try {
+            await addDoc(collection(db, 'service_requests'), {
+                pemanduID: auth.currentUser.uid,
+                bengkelID: 'SNSService123', // Placeholder until dynamic ID is implemented
+                workshopName: 'SNS Service',
+                status: 'Pending',
+                contactMethod: contactMethod,
+                timestamp: serverTimestamp(),
+                pemanduName: auth.currentUser.displayName || 'Guest Driver',
+            });
+            console.log("Service request created automatically via " + contactMethod);
+        } catch (error) {
+            console.error("Error creating service request:", error);
+        }
+    };
+
+    const handleCall = async () => {
+        await createServiceRequest('call');
         Linking.openURL('tel:+60123456789'); // Example number
     };
 
@@ -16,9 +41,10 @@ export default function infoBengkel() {
         Linking.openURL('https://www.google.com/maps/search/?api=1&query=SNS+Service+Workshop');
     };
 
-    const handleWhatsApp = () => {
+    const handleWhatsApp = async () => {
+        await createServiceRequest('whatsapp');
         Linking.openURL('whatsapp://send?phone=+60123456789&text=Hello SNS Service, I need assistance with my car.');
-    }
+    };
 
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -27,6 +53,7 @@ export default function infoBengkel() {
                 <Image
                     source={require('../../assets/images/benkel.png')}
                     style={styles.headerImage}
+                    resizeMode="contain"
                 />
                 <TouchableOpacity style={styles.backButton} onPress={() => { router.back() }}>
                     <Feather name="arrow-left" size={24} color="white" />
@@ -159,7 +186,6 @@ const styles = StyleSheet.create({
     headerImage: {
         width: '100%',
         height: '100%',
-        resizeMode: 'contain', // Changed to contain so you see the whole picture
         backgroundColor: '#f0f0f0',
     },
     backButton: {

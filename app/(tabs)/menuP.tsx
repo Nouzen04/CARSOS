@@ -26,7 +26,7 @@ export default function TabOneScreen() {
               style={styles.serviceCard}
             >
               <View style={styles.iconBackground}>
-                <Image source={service.icon} style={styles.icon} />
+                <Image source={service.icon} style={styles.icon} resizeMode="contain" />
               </View>
               <Text style={styles.serviceText}>{service.title}</Text>
             </TouchableOpacity>
@@ -47,7 +47,7 @@ export default function TabOneScreen() {
             onPress={() => router.push('/(tabs)/bengkelP' as Href)}
           >
             <View>
-              <Image source={require('../../assets/images/benkel.png')} style={styles.image} />
+              <Image source={require('../../assets/images/benkel.png')} style={styles.image} resizeMode="stretch" />
               <Text style={styles.cardText}>SNS Service</Text>
               <Text style={styles.cardText}>12 minutes away</Text>{/* map */}
             </View>
@@ -101,7 +101,6 @@ const styles = StyleSheet.create({
   icon: {
     width: 50,
     height: 50,
-    resizeMode: 'contain',
   },
   serviceText: {
     fontSize: 14,
@@ -140,7 +139,6 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: 224,
-    resizeMode: 'stretch',
     alignSelf: 'center',
     borderRadius: 8,
     marginBottom: 16,

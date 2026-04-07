@@ -3,10 +3,11 @@ import { Checkbox } from 'expo-checkbox';
 import { Href, router } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from "react-native";
 import DropDownPicker from 'react-native-dropdown-picker';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { auth } from "../firebase";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../firebase";
 
 interface Service {
     id: number;
@@ -38,12 +39,41 @@ export default function signup() {
     };
 
     const signUp = async () => {
+        if (!email || !password || !role) {
+            Alert.alert("Error", "Please fill in all required fields and select a role.");
+            return;
+        }
+
         try {
-            const user = await createUserWithEmailAndPassword(auth, email, password)
-            if (user) router.replace('/(tabs)' as Href);
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            if (user) {
+                // Save user data to Firestore
+                const userData: any = {
+                    uid: user.uid,
+                    email: email,
+                    name: name,
+                    phone: phone,
+                    role: role,
+                    createdAt: new Date().toISOString(),
+                };
+
+                if (role === 'bengkel') {
+                    userData.address = address;
+                    userData.selectedServices = selectedServices;
+                    userData.facilities = facilities;
+                    userData.description = description;
+                }
+
+                await setDoc(doc(db, "users", user.uid), userData);
+                
+                Alert.alert("Success", "Account created successfully!");
+                router.replace('/(tabs)/menuP' as Href);
+            }
         } catch (error: any) {
-            console.log(error)
-            alert('Sign Up Failed: ' + error.message)
+            console.log(error);
+            Alert.alert('Sign Up Failed', error.message);
         }
     }
 
@@ -58,7 +88,7 @@ export default function signup() {
 
     const pemandu = () => {
         return (
-            <SafeAreaView >
+            <SafeAreaView>
                 <TextInput
                     style={styles.input}
                     placeholder="Name"
@@ -85,13 +115,16 @@ export default function signup() {
                     onChangeText={setPhone}
                     secureTextEntry
                 />
+                <TouchableOpacity style={styles.Button} onPress={signUp} disabled={true}>
+                    <Text style={styles.buttonText}>Sign Up</Text>
+                </TouchableOpacity>
             </SafeAreaView>
         )
     }
 
     const bengkel = () => {
         return (
-            <SafeAreaView style={styles.formContainer}>
+            <SafeAreaView >
                 <TextInput
                     style={styles.input}
                     placeholder="Workshop Name"
@@ -158,6 +191,9 @@ export default function signup() {
                     onChangeText={setDescription}
                     secureTextEntry
                 />
+                <TouchableOpacity style={styles.Button} onPress={signUp}>
+                    <Text style={styles.buttonText}>Sign Up</Text>
+                </TouchableOpacity>
             </SafeAreaView>
         )
     }
@@ -183,9 +219,6 @@ export default function signup() {
                 {role === 'pemandu' && pemandu()}
                 {role === 'bengkel' && bengkel()}
 
-                <TouchableOpacity style={styles.Button} onPress={signUp}>
-                    <Text style={styles.buttonText}>Sign Up</Text>
-                </TouchableOpacity>
                 <View style={styles.signUpSection}>
                     <Text style={styles.footerText}>Already have an account?</Text>
                     <TouchableOpacity onPress={() => router.replace('/login' as Href)}>
@@ -265,7 +298,7 @@ const styles = StyleSheet.create({
         marginLeft: 4,
     },
     input: {
-        width: 352,
+        width: '90%',
         height: 50,
         borderColor: '#aaa9a9ff',
         borderWidth: 1,
@@ -273,6 +306,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         borderRadius: 10,
         backgroundColor: '#fafafa',
+        alignSelf: 'center',
     },
     Button: {
         backgroundColor: '#8baaffff',
