@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
   },
   loginSection: {
     position: 'absolute',
-    bottom: 200, // Distance from the bottom
+    bottom: 120, // Distance from the bottom
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
@@ -104,16 +104,16 @@ export default function loginsignup() {
           const role = userData.role;
 
           if (role === 'admin') {
-            router.replace('/(admin)/menuA' as Href);
+            router.replace('/menuA' as Href);
           } else if (role === 'bengkel') {
-            router.replace('/(bengkel)/menuD' as Href);
+            router.replace('/menuD' as Href);
           } else {
             // Default to pemandu (tabs)
-            router.replace('/(tabs)/menuP' as Href);
+            router.replace('/menuP' as Href);
           }
         } else {
           // If no doc exists, default to tabs
-          router.replace('/(tabs)/menuP' as Href);
+          router.replace('/menuP' as Href);
         }
       }
     } catch (error: any) {

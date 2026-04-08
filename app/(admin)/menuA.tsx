@@ -11,9 +11,9 @@ export default function AdminDashboard() {
     ];
 
     const actions = [
-        { id: '1', title: 'View Users', icon: 'U', onPress: () => router.push('/(admin)/viewuserA' as Href) },
-        { id: '2', title: 'Manage Workshops', icon: 'W', onPress: () => router.push('/(admin)/manageworkshopA' as Href) },
-        { id: '3', title: 'View Reports', icon: 'R', onPress: () => router.push('/(admin)/reportsA' as Href) },
+        { id: '1', title: 'View Users', icon: 'U', onPress: () => router.push('/viewuserA' as Href) },
+        { id: '2', title: 'Manage Workshops', icon: 'W', onPress: () => router.push('/manageworkshopA' as Href) },
+        { id: '3', title: 'View Reports', icon: 'R', onPress: () => router.push('/reportsA' as Href) },
     ];
 
     return (

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TouchableHighlight, View, ActivityIndicator } from 'react-native';
-import { collection, query, where, onSnapshot, updateDoc, doc } from 'firebase/firestore';
-import { auth, db } from '../../firebase';
+import { collection, doc, onSnapshot, query, updateDoc, where } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TouchableHighlight, View } from 'react-native';
+import { db } from '../../firebase';
 
 const JobCard = ({ job, type }: { job: any, type: 'incoming' | 'waiting' }) => {
     const handleStatusUpdate = async (newStatus: string) => {
@@ -93,7 +93,7 @@ export default function BengkelHome() {
         return () => unsubscribe();
     }, []);
 
-    const filteredRequests = requests.filter(req => 
+    const filteredRequests = requests.filter(req =>
         activeTab === 'incoming' ? req.status === 'Pending' : req.status === 'Accepted'
     );
 

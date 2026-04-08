@@ -93,11 +93,11 @@ export default function signup() {
                 
                 // Role-based navigation
                 if (role === 'bengkel') {
-                    router.replace('/(bengkel)/menuD' as Href);
+                    router.replace('/menuD' as Href);
                 } else if (role === 'admin') {
-                    router.replace('/(admin)/menuA' as Href);
+                    router.replace('/menuA' as Href);
                 } else {
-                    router.replace('/(tabs)/menuP' as Href);
+                    router.replace('/menuP' as Href);
                 }
             }
         } catch (error: any) {

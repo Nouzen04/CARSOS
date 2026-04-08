@@ -44,7 +44,7 @@ export default function TabOneScreen() {
           <TouchableHighlight
             underlayColor="#f0f0f0"
             style={{ borderRadius: 12 }}
-            onPress={() => router.push('/(tabs)/bengkelP' as Href)}
+            onPress={() => router.push('/bengkelP' as Href)}
           >
             <View>
               <Image source={require('../../assets/images/benkel.png')} style={styles.image} resizeMode="stretch" />
