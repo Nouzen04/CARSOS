@@ -14,7 +14,6 @@ import {
   PaperProvider,
   adaptNavigationTheme
 } from 'react-native-paper';
-import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
@@ -92,7 +91,7 @@ SplashScreen.setOptions({
   fade: true,
 })
 
-export default function RootLayout() {
+function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...FontAwesome.font,
@@ -115,6 +114,8 @@ export default function RootLayout() {
 
   return <RootLayoutNav />;
 }
+
+export default RootLayout;
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
