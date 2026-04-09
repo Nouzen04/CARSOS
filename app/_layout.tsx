@@ -1,23 +1,23 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { 
-  DarkTheme as NavigationDarkTheme, 
-  DefaultTheme as NavigationDefaultTheme, 
-  ThemeProvider 
+import {
+  DarkTheme as NavigationDarkTheme,
+  DefaultTheme as NavigationDefaultTheme,
+  ThemeProvider
 } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { 
-  MD3DarkTheme, 
-  MD3LightTheme, 
-  PaperProvider, 
-  adaptNavigationTheme 
+import {
+  MD3DarkTheme,
+  MD3LightTheme,
+  PaperProvider,
+  adaptNavigationTheme
 } from 'react-native-paper';
 import 'react-native-reanimated';
 
-import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 
 const { LightTheme: NavLightTheme, DarkTheme: NavDarkTheme } = adaptNavigationTheme({
   reactNavigationLight: NavigationDefaultTheme,
@@ -86,6 +86,11 @@ export const unstable_settings = {
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+SplashScreen.setOptions({
+  duration: 400,
+  fade: true,
+})
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({

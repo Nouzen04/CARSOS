@@ -1,7 +1,7 @@
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import React, { useEffect, useState } from 'react';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
 
 export default function NotificationScreen() {
@@ -65,7 +65,6 @@ export default function NotificationScreen() {
     <ScrollView style={styles.scrollView}>
       <SafeAreaView style={styles.container}>
         <Text style={styles.pageTitle}>Notifications</Text>
-        
         {loading ? (
           <ActivityIndicator size="large" color="#8baaff" style={{ marginTop: 50 }} />
         ) : (
@@ -74,10 +73,10 @@ export default function NotificationScreen() {
               notifications.map((notif) => (
                 <View key={notif.id} style={styles.card}>
                   <View style={styles.iconContainer}>
-                    <Image 
-                      source={require('../../assets/images/wrench.png')} 
-                      style={[styles.icon, { tintColor: getStatusColor(notif.status) }]} 
-                      resizeMode="contain" 
+                    <Image
+                      source={require('../../assets/images/wrench.png')}
+                      style={[styles.icon, { tintColor: getStatusColor(notif.status) }]}
+                      resizeMode="contain"
                     />
                   </View>
                   <View style={styles.cardContent}>

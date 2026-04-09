@@ -15,7 +15,9 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import Markdown from 'react-native-markdown-display';
+import { marked } from 'marked';
+import RenderHTML from 'react-native-render-html';
+import { useWindowDimensions } from 'react-native';
 import { auth, db } from '../../firebase'; // Accessing configured Firestore and Auth
 
 // Configuration - USER NEEDS TO ADD THEIR GEMINI API KEY HERE
@@ -139,16 +141,15 @@ export default function AIChatScreen() {
             {item.sender === 'user' ? (
                 <Text style={styles.userText}>{item.text}</Text>
             ) : (
-                <Markdown
-                    style={{
-                        body: { color: '#2C3E50', fontSize: 15, lineHeight: 22 },
-                        strong: { fontWeight: 'bold' },
-                        bullet_list: { marginBottom: 10 },
-                        list_item: { marginBottom: 5 }
+                <RenderHTML
+                    contentWidth={useWindowDimensions().width}
+                    source={{ html: marked.parse(item.text) as string }}
+                    baseStyle={{
+                        color: '#2C3E50',
+                        fontSize: 15,
+                        lineHeight: 22,
                     }}
-                >
-                    {item.text}
-                </Markdown>
+                />
             )}
 
             {item.sender === 'ai' && !item.feedbackGiven && item.id !== '1' && (
