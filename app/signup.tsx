@@ -2,422 +2,385 @@ import Feather from '@expo/vector-icons/Feather';
 import { Checkbox } from 'expo-checkbox';
 import { Href, router } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, GeoPoint } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator, ScrollView } from "react-native";
-import DropDownPicker from 'react-native-dropdown-picker';
+import { Alert, StyleSheet, TouchableOpacity, View, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { TextInput, Text, SegmentedButtons, useTheme } from 'react-native-paper';
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from 'expo-linear-gradient';
 import { auth, db } from "../firebase";
 import { getCurrentLocation, toGeoPoint } from "../utils/mapService";
+import { ModernCard } from '@/components/ModernCard';
+import { GradientButton } from '@/components/GradientButton';
+import Colors from '@/constants/Colors';
 
 interface Service {
-    id: number;
-    name: string;
-    icon: string;
+  id: number;
+  name: string;
+  icon: string;
 }
 
-export default function signup() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [phone, setPhone] = useState('');
-    const [name, setName] = useState('');
-    const [workshopName, setWorkshopName] = useState('');
-    const [address, setAddress] = useState('');
-    const [serviceType, setServiceType] = useState('');
-    const [facilities, setFacilities] = useState('');
-    const [description, setDescription] = useState('');
-    const [role, setRole] = useState(null);
-    const [location, setLocation] = useState<{ latitude: number, longitude: number } | null>(null);
-    const [loadingLocation, setLoadingLocation] = useState(false);
-    const [open, setOpen] = useState(false);
-    const [items, setItems] = useState([
-        { label: 'Pemandu', value: 'pemandu' },
-        { label: 'Bengkel', value: 'bengkel' }
-    ]);
-    const [selectedServices, setSelectedServices] = useState<number[]>([]);
+const SERVICES = [
+  { id: 1, name: 'Full Service', icon: 'settings' },
+  { id: 2, name: 'Tire Change', icon: 'disc' },
+  { id: 3, name: 'Brake Repair', icon: 'tool' },
+  { id: 4, name: 'Engine Tune', icon: 'activity' },
+  { id: 5, name: 'Oil Service', icon: 'droplet' },
+  { id: 6, name: 'Aircond', icon: 'wind' }
+];
 
-    const toggleService = (id: number) => {
-        setSelectedServices(prev =>
-            prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
-        );
-    };
+export default function SignupScreen() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [name, setName] = useState('');
+  const [workshopName, setWorkshopName] = useState('');
+  const [address, setAddress] = useState('');
+  const [facilities, setFacilities] = useState('');
+  const [description, setDescription] = useState('');
+  const [role, setRole] = useState('pemandu');
+  const [location, setLocation] = useState<{ latitude: number, longitude: number } | null>(null);
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [selectedServices, setSelectedServices] = useState<number[]>([]);
+  const [showPassword, setShowPassword] = useState(false);
 
-    const handleGetLocation = async () => {
-        setLoadingLocation(true);
-        const loc = await getCurrentLocation();
-        setLoadingLocation(false);
-        if (loc) {
-            setLocation(loc);
-            Alert.alert("Success", "Location captured successfully!");
-        } else {
-            Alert.alert("Error", "Could not get your location. Please check your GPS settings.");
-        }
-    };
-
-    const signUp = async () => {
-        if (!email || !password || !role) {
-            Alert.alert("Error", "Please fill in all required fields and select a role.");
-            return;
-        }
-
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-
-            if (user) {
-                // Save user data to Firestore
-                const userData: any = {
-                    uid: user.uid,
-                    email: email,
-                    name: name,
-                    phone: phone,
-                    role: role,
-                    createdAt: new Date().toISOString(),
-                };
-
-                if (role === 'bengkel') {
-                    userData.name = workshopName; 
-                    userData.address = address;
-                    userData.selectedServices = selectedServices;
-                    userData.facilities = facilities;
-                    userData.description = description;
-                    userData.verified = false; 
-                    if (location) {
-                        userData.location = toGeoPoint(location);
-                    }
-                }
-
-                await setDoc(doc(db, "users", user.uid), userData);
-
-                Alert.alert("Success", "Account created successfully!");
-                
-                // Role-based navigation
-                if (role === 'bengkel') {
-                    router.replace('/menuD' as Href);
-                } else if (role === 'admin') {
-                    router.replace('/menuA' as Href);
-                } else {
-                    router.replace('/menuP' as Href);
-                }
-            }
-        } catch (error: any) {
-            console.log(error);
-            Alert.alert('Sign Up Failed', error.message);
-        }
-    }
-
-    const SERVICE = [
-        { id: 1, name: 'Full Service', icon: 'settings' },
-        { id: 2, name: 'Tire Change', icon: 'disc' },
-        { id: 3, name: 'Brake Repair', icon: 'tool' },
-        { id: 4, name: 'Engine Tune', icon: 'activity' },
-        { id: 5, name: 'Oil Service', icon: 'droplet' },
-        { id: 6, name: 'Aircond', icon: 'wind' }
-    ]
-
-    const pemandu = () => {
-        return (
-            <SafeAreaView>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Name"
-                    value={name}
-                    onChangeText={setName}
-                />
-                <TextInput
-                    style={styles.input}
-                    placeholder="Email"
-                    value={email}
-                    onChangeText={setEmail}
-                />
-                <TextInput
-                    style={styles.input}
-                    placeholder="Password"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                />
-                <TextInput
-                    style={styles.input}
-                    placeholder="Phone No"
-                    value={phone}
-                    onChangeText={setPhone}
-                    keyboardType="phone-pad"
-                />
-                <TouchableOpacity style={styles.Button} onPress={signUp}>
-                    <Text style={styles.buttonText}>Sign Up</Text>
-                </TouchableOpacity>
-            </SafeAreaView>
-        )
-    }
-
-    const bengkel = () => {
-        return (
-            <SafeAreaView >
-                <TextInput
-                    style={styles.input}
-                    placeholder="Workshop Name"
-                    value={workshopName}
-                    onChangeText={setWorkshopName}
-                />
-                <TextInput
-                    style={styles.input}
-                    placeholder="Email"
-                    value={email}
-                    onChangeText={setEmail}
-                />
-                <TextInput
-                    style={styles.input}
-                    placeholder="Password"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                />
-                <TextInput
-                    style={styles.input}
-                    placeholder="Phone No"
-                    value={phone}
-                    onChangeText={setPhone}
-                    keyboardType="phone-pad"
-                />
-                <TextInput
-                    style={[styles.input, { height: 80 }]}
-                    placeholder="Address"
-                    value={address}
-                    onChangeText={setAddress}
-                    multiline
-                />
-                 <TouchableOpacity 
-                    style={[styles.locationButton, location ? { backgroundColor: '#4CAF50' } : null]} 
-                    onPress={handleGetLocation}
-                    disabled={loadingLocation}
-                >
-                    {loadingLocation ? (
-                        <ActivityIndicator color="white" />
-                    ) : (
-                        <>
-                            <Feather name="map-pin" size={18} color="white" />
-                            <Text style={styles.locationButtonText}>
-                                {location ? "Location Captured" : "Use My Current Location"}
-                            </Text>
-                        </>
-                    )}
-                </TouchableOpacity>
-                <Text style={styles.label}>Service Types</Text>
-                <View style={styles.servicesGrid}>
-                    {SERVICE.map((item: Service) => (
-                        <TouchableOpacity
-                            key={item.id}
-                            style={styles.serviceItem}
-                            onPress={() => toggleService(item.id)}
-                        >
-                            <Checkbox
-                                value={selectedServices.includes(item.id)}
-                                onValueChange={() => toggleService(item.id)}
-                                color={selectedServices.includes(item.id) ? '#4630EB' : undefined}
-                                style={styles.checkbox}
-                            />
-                            <Feather name={item.icon as any} size={18} color="#333" style={{ marginLeft: 8 }} />
-                            <Text style={styles.serviceLabel}>{item.name}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Facilities"
-                    value={facilities}
-                    onChangeText={setFacilities}
-                />
-                <TextInput
-                    style={[styles.input, { height: 100 }]}
-                    placeholder="Description"
-                    value={description}
-                    onChangeText={setDescription}
-                    multiline
-                />
-                <TouchableOpacity style={styles.Button} onPress={signUp}>
-                    <Text style={styles.buttonText}>Sign Up</Text>
-                </TouchableOpacity>
-            </SafeAreaView>
-        )
-    }
-
-    return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.formContainer}>
-                <Text style={styles.title}>Welcome to CARSOS</Text>
-                <Text style={styles.subtitle}>Please sign up</Text>
-                <DropDownPicker
-                    open={open}
-                    value={role}
-                    items={items}
-                    setOpen={setOpen}
-                    setValue={setRole}
-                    setItems={setItems}
-                    placeholder="Select Role"
-                    style={styles.dropdown}
-                    dropDownContainerStyle={styles.dropdownContainer}
-                    zIndex={1000}
-                />
-
-                {role === 'pemandu' && pemandu()}
-                {role === 'bengkel' && <ScrollView showsVerticalScrollIndicator={false}>{bengkel()}</ScrollView>}
-
-                <View style={styles.signUpSection}>
-                    <Text style={styles.footerText}>Already have an account?</Text>
-                    <TouchableOpacity onPress={() => router.replace('/login' as Href)}>
-                        <Text style={styles.signUp}>Log In</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-
-        </SafeAreaView>
+  const toggleService = (id: number) => {
+    setSelectedServices(prev =>
+      prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
     );
-}
-const styles = StyleSheet.create({
-    dropdown: {
-        width: '90%',
-        height: 50,
-        borderColor: '#aaa9a9ff',
-        borderWidth: 1,
-        marginBottom: 15,
-        paddingHorizontal: 15,
-        borderRadius: 10,
-        backgroundColor: '#fafafa',
-        alignSelf: 'center',
-    },
-    dropdownContainer: {
-        width: '90%',
-        borderColor: '#aaa9a9ff',
-        borderWidth: 1,
-        backgroundColor: '#fafafa',
-        alignSelf: 'center',
-    },
-    container: {
-        flex: 1,
-        backgroundColor: '#f8f8f8ff',
-    },
-    formContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        padding: 20,
-        backgroundColor: '#f8f8f8ff',
-    },
-    signUpSection: {
-        position: 'relative',
-        marginTop: 20,
-        alignItems: 'center',
-        flexDirection: 'row',
-        justifyContent: 'center',
-    },
-    signUp: {
-        color: '#371dffff',
-        fontSize: 14,
-        fontWeight: 'bold',
-    },
-    footerText: {
-        color: '#000000',
-        fontSize: 14,
-        marginRight: 10,
-    },
-    title: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 8,
-        alignSelf: 'center',
-    },
-    subtitle: {
-        fontSize: 16,
-        color: '#666',
-        marginBottom: 20,
-        position: 'relative',
-        alignSelf: 'center',
-    },
-    label: {
-        fontSize: 16,
-        color: '#000000',
-        marginBottom: 8,
-        textAlign: 'left',
-        marginLeft: 4,
-    },
-    input: {
-        width: '90%',
-        height: 50,
-        borderColor: '#aaa9a9ff',
-        borderWidth: 1,
-        marginBottom: 15,
-        paddingHorizontal: 15,
-        borderRadius: 10,
-        backgroundColor: '#fafafa',
-        alignSelf: 'center',
-    },
-    Button: {
-        backgroundColor: '#8baaffff',
-        padding: 15,
-        borderRadius: 50,
-        width: '50%',
-        alignSelf: 'center',
-        marginTop: 15,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    buttonText: {
-        color: '#000000',
-        fontWeight: 'bold',
-        fontSize: 18,
-        alignSelf: 'center',
-    },
-    choice: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#eee',
-        paddingHorizontal: 15,
-        borderRadius: 20,
-        marginRight: 10,
-    },
-    servicesGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        marginBottom: 15,
-        gap: 10,
-    },
-    serviceItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#eee',
-        padding: 10,
-        borderRadius: 10,
-        minWidth: '45%',
-    },
-    checkbox: {
-        width: 20,
-        height: 20,
-    },
-    serviceLabel: {
-        marginLeft: 8,
-        fontSize: 14,
-        color: '#333',
-    },
-    locationButton: {
-        backgroundColor: '#4630EB',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 12,
-        borderRadius: 10,
-        width: '90%',
-        alignSelf: 'center',
-        marginBottom: 15,
-        gap: 8,
-    },
-    locationButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: 14,
-    },
+  };
 
-});
+  const handleGetLocation = async () => {
+    setLoadingLocation(true);
+    const loc = await getCurrentLocation();
+    setLoadingLocation(false);
+    if (loc) {
+      setLocation(loc);
+      Alert.alert("Success", "Location captured successfully!");
+    } else {
+      Alert.alert("Error", "Could not get your location. Please check your GPS settings.");
+    }
+  };
+
+  const signUp = async () => {
+    if (!email || !password || !role) {
+      Alert.alert("Error", "Please fill in all required fields.");
+      return;
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      if (user) {
+        const userData: any = {
+          uid: user.uid,
+          email: email,
+          name: name,
+          phone: phone,
+          role: role,
+          createdAt: new Date().toISOString(),
+        };
+
+        if (role === 'bengkel') {
+          userData.name = workshopName; 
+          userData.address = address;
+          userData.selectedServices = selectedServices;
+          userData.facilities = facilities;
+          userData.description = description;
+          userData.verified = false; 
+          if (location) {
+            userData.location = toGeoPoint(location);
+          }
+        }
+
+        await setDoc(doc(db, "users", user.uid), userData);
+        Alert.alert("Success", "Account created successfully!");
+        
+        if (role === 'bengkel') {
+          router.replace('/menuD' as Href);
+        } else if (role === 'admin') {
+          router.replace('/menuA' as Href);
+        } else {
+          router.replace('/menuP' as Href);
+        }
+      }
+    } catch (error: any) {
+      console.log(error);
+      Alert.alert('Sign Up Failed', error.message);
+    }
+  }
+
+  return (
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+        <LinearGradient
+          colors={[Colors.light.primary, Colors.light.secondary]}
+          style={styles.header}
+        >
+          <SafeAreaView style={styles.headerContent}>
+            <Text variant="displaySmall" style={styles.headerTitle}>Join CARSOS</Text>
+            <Text variant="titleMedium" style={styles.headerSubtitle}>Choose your role to get started</Text>
+          </SafeAreaView>
+        </LinearGradient>
+
+        <View style={styles.body}>
+          <ModernCard style={styles.card}>
+            <SegmentedButtons
+              value={role}
+              onValueChange={setRole}
+              buttons={[
+                { value: 'pemandu', label: 'Driver', icon: 'car' },
+                { value: 'bengkel', label: 'Workshop', icon: 'tools' },
+                { value: 'admin', label: 'Admin', icon: 'shield-account' },
+              ]}
+              style={styles.segmentedButtons}
+              theme={{ colors: { secondaryContainer: Colors.light.primary + '20', onSecondaryContainer: Colors.light.primary } }}
+            />
+
+            <TextInput
+              mode="outlined"
+              label={role === 'bengkel' ? "Workshop Name" : "Full Name"}
+              value={role === 'bengkel' ? workshopName : name}
+              onChangeText={role === 'bengkel' ? setWorkshopName : setName}
+              style={styles.input}
+              left={<TextInput.Icon icon="account-outline" color={Colors.light.primary} />}
+            />
+
+            <TextInput
+              mode="outlined"
+              label="Email Address"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              style={styles.input}
+              left={<TextInput.Icon icon="email-outline" color={Colors.light.primary} />}
+            />
+
+            <TextInput
+              mode="outlined"
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              style={styles.input}
+              left={<TextInput.Icon icon="lock-outline" color={Colors.light.primary} />}
+              right={<TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} />}
+            />
+
+            <TextInput
+              mode="outlined"
+              label="Phone Number"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              style={styles.input}
+              left={<TextInput.Icon icon="phone-outline" color={Colors.light.primary} />}
+            />
+
+            {role === 'bengkel' && (
+              <View style={styles.bengkelFields}>
+                <TextInput
+                  mode="outlined"
+                  label="Business Address"
+                  value={address}
+                  onChangeText={setAddress}
+                  multiline
+                  numberOfLines={3}
+                  style={styles.input}
+                  left={<TextInput.Icon icon="map-marker-outline" color={Colors.light.primary} />}
+                />
+
+                <TouchableOpacity 
+                  style={[styles.locationBtn, location ? styles.locationBtnSuccess : null]} 
+                  onPress={handleGetLocation}
+                  disabled={loadingLocation}
+                >
+                  {loadingLocation ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <>
+                      <Feather name={location ? "check-circle" : "map-pin"} size={18} color="white" />
+                      <Text style={styles.locationBtnText}>
+                        {location ? "Location Verified" : "Verify My Location"}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <Text variant="titleSmall" style={styles.sectionLabel}>Services Offered</Text>
+                <View style={styles.servicesGrid}>
+                  {SERVICES.map((item) => (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[
+                        styles.serviceItem,
+                        selectedServices.includes(item.id) && styles.serviceItemSelected
+                      ]}
+                      onPress={() => toggleService(item.id)}
+                    >
+                      <Checkbox
+                        value={selectedServices.includes(item.id)}
+                        onValueChange={() => toggleService(item.id)}
+                        color={selectedServices.includes(item.id) ? Colors.light.primary : undefined}
+                        style={styles.checkbox}
+                      />
+                      <Text style={styles.serviceLabel}>{item.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <TextInput
+                  mode="outlined"
+                  label="Facilities"
+                  value={facilities}
+                  onChangeText={setFacilities}
+                  placeholder="e.g. WiFi, Waiting Room, Coffee"
+                  style={styles.input}
+                />
+
+                <TextInput
+                  mode="outlined"
+                  label="Business Description"
+                  value={description}
+                  onChangeText={setDescription}
+                  multiline
+                  numberOfLines={4}
+                  style={styles.input}
+                />
+              </View>
+            )}
+
+            <GradientButton 
+              title="Create Account" 
+              onPress={signUp} 
+              style={styles.button}
+            />
+
+            <View style={styles.footer}>
+              <Text variant="bodyMedium">Already have an account? </Text>
+              <TouchableOpacity onPress={() => router.replace('/login' as Href)}>
+                <Text variant="bodyMedium" style={styles.loginLink}>Log In</Text>
+              </TouchableOpacity>
+            </View>
+          </ModernCard>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  header: {
+    height: 250,
+    justifyContent: 'center',
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+  },
+  headerContent: {
+    paddingHorizontal: 30,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    letterSpacing: 2,
+  },
+  headerSubtitle: {
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  body: {
+    flex: 1,
+    marginTop: -40,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    paddingVertical: 30,
+  },
+  segmentedButtons: {
+    marginBottom: 25,
+  },
+  input: {
+    marginBottom: 16,
+    backgroundColor: '#ffffff',
+  },
+  bengkelFields: {
+    marginTop: 10,
+  },
+  sectionLabel: {
+    color: '#0f172a',
+    marginVertical: 15,
+    fontWeight: 'bold',
+  },
+  locationBtn: {
+    backgroundColor: '#6366f1',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 20,
+    gap: 8,
+  },
+  locationBtnSuccess: {
+    backgroundColor: '#10b981',
+  },
+  locationBtnText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  servicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20,
+  },
+  serviceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f1f5f9',
+    padding: 12,
+    borderRadius: 12,
+    width: '48%',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  serviceItemSelected: {
+    borderColor: '#6366f1',
+    backgroundColor: '#eef2ff',
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+  },
+  serviceLabel: {
+    marginLeft: 10,
+    fontSize: 13,
+    color: '#334155',
+  },
+  button: {
+    marginTop: 20,
+    width: '100%',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 30,
+  },
+  loginLink: {
+    color: '#6366f1',
+    fontWeight: 'bold',
+  },
+});

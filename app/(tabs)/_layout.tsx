@@ -1,18 +1,11 @@
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
-import Feather from '@expo/vector-icons/Feather';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Tabs } from 'expo-router';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Tabs, router, Href } from 'expo-router';
 import React from 'react';
-import { Image, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
-}
+import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, Surface, IconButton } from 'react-native-paper';
 
 interface SearchBarProps {
   clicked: boolean;
@@ -22,22 +15,22 @@ interface SearchBarProps {
 }
 
 const SearchBar = ({ clicked, searchPhrase, setSearchPhrase, onSearch }: SearchBarProps) => {
+  if (!clicked) return null;
+  
   return (
-    <View style={clicked ? styles.searchBar__expanded : styles.searchBar__collapsed}>
-      {clicked && (
-        <TextInput
-          style={[styles.input, { outlineStyle: 'none' } as any]}
-          placeholder="Search for everything..."
-          placeholderTextColor="#999"
-          value={searchPhrase}
-          onChangeText={setSearchPhrase}
-          onSubmitEditing={() => onSearch(searchPhrase)}
-          autoFocus={true}
-          underlineColorAndroid="transparent"
-          returnKeyType="search"
-        />
-      )}
-    </View>
+    <Surface style={styles.searchBarSurface} elevation={1}>
+      <TextInput
+        style={styles.input}
+        placeholder="Search workshops..."
+        placeholderTextColor="#94a3b8"
+        value={searchPhrase}
+        onChangeText={setSearchPhrase}
+        onSubmitEditing={() => onSearch(searchPhrase)}
+        autoFocus={true}
+        underlineColorAndroid="transparent"
+        returnKeyType="search"
+      />
+    </Surface>
   );
 };
 
@@ -47,10 +40,7 @@ export default function TabLayout() {
   const [clicked, setClicked] = React.useState(false);
 
   const handleSearch = (query: string) => {
-    console.log("Searching for:", query);
-    // You can add navigation or filtering logic here
     if (query.trim()) {
-      // Example: router.push(`/(tabs)/search?q=${query}`)
       setClicked(false);
     }
   };
@@ -58,23 +48,21 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[(colorScheme ?? 'light') as keyof typeof Colors].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
+        tabBarActiveTintColor: Colors.light.primary,
+        tabBarInactiveTintColor: '#94a3b8',
+        tabBarStyle: styles.tabBar,
+        tabBarLabelStyle: styles.tabBarLabel,
         headerShown: useClientOnlyValue(false, true),
+        headerStyle: styles.header,
+        headerTitleStyle: styles.headerTitle,
+        headerShadowVisible: false,
       }}>
       <Tabs.Screen
         name="menuP"
         options={{
-          headerTitle: clicked ? '' : 'Hi Pemandu',
-          tabBarLabel: 'Home',
-          headerTitleStyle: {
-            fontSize: 20,
-            fontWeight: 'normal',
-            color: 'black',
-            padding: 4,
-          },
-          tabBarIcon: () => <Image source={require('../../assets/images/home.png')} style={{ width: 30, height: 30 }} />,
+          headerTitle: clicked ? '' : 'Explore',
+          tabBarLabel: 'Explore',
+          tabBarIcon: ({ color }) => <Feather name="search" size={24} color={color} />,
           headerRight: () => (
             <View style={styles.headerRight}>
               <SearchBar
@@ -83,19 +71,10 @@ export default function TabLayout() {
                 setSearchPhrase={setSearchPhrase}
                 onSearch={handleSearch}
               />
-              {clicked && (
-                //this is for penambahan search icon untuk search
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => handleSearch(searchPhrase)}
-                  style={styles.iconButton}
-                >
-                  <Feather name="search" size={22} color="#333" />
-                </TouchableOpacity>
-              )}
-              {/* this is for close icon untuk close search dan dia akan tukar search icon kepada close icon */}
-              <TouchableOpacity
-                activeOpacity={0.7}
+              <IconButton
+                icon={clicked ? "close" : "magnify"}
+                size={22}
+                iconColor={clicked ? "#ef4444" : "#0f172a"}
                 onPress={() => {
                   if (clicked) {
                     setClicked(false);
@@ -104,20 +83,12 @@ export default function TabLayout() {
                     setClicked(true);
                   }
                 }}
-                style={styles.iconButton}
-              >
-                <Feather
-                  name={clicked ? "x" : "search"}
-                  size={22}
-                  color={clicked ? "#FF4B4B" : "#333"}
-                />
-              </TouchableOpacity>
+              />
               <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => { /* router.push() */ }}
-                style={styles.iconButton}
+                onPress={() => router.push('/(tabs)/profileP' as Href)}
+                style={styles.profileBtn}
               >
-                <Feather name={"user"} size={22} color={"#333"} />
+                <Feather name="user" size={20} color="#0f172a" />
               </TouchableOpacity>
             </View>
           ),
@@ -126,51 +97,45 @@ export default function TabLayout() {
       <Tabs.Screen
         name="notificationP"
         options={{
-          headerTitle: 'Notification',
-          tabBarLabel: 'Notification',
-          headerTitleStyle: {
-            fontSize: 20,
-            fontWeight: 'normal',
-            color: 'black',
-            padding: 4,
-          },
-          tabBarIcon: ({ color }) => <Image source={require('../../assets/images/notification.png')} style={{ width: 30, height: 30 }} />,
+          headerTitle: 'Inbox',
+          tabBarLabel: 'Inbox',
+          tabBarIcon: ({ color }) => <Feather name="mail" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="sosP"
         options={{
-          headerTitle: 'SOS',
-          tabBarLabel: 'SOS',
-          headerTitleStyle: {
-            fontSize: 20,
-            fontWeight: 'normal',
-            color: 'black',
-            padding: 4,
-          },
-          tabBarIcon: ({ color }) => <Image source={require('../../assets/images/SOS.png')} style={{ width: 30, height: 30 }} />,
+          headerTitle: 'Assistance',
+          tabBarLabel: 'Emergency',
+          tabBarIcon: ({ color }) => (
+            <Surface style={styles.sosIconContainer} elevation={2}>
+              <MaterialCommunityIcons name="alert-octagon" size={24} color="#fff" />
+            </Surface>
+          ),
         }}
       />
       <Tabs.Screen
         name="aiP"
         options={{
-          headerTitle: 'AI',
-          tabBarLabel: 'AI',
-          headerTitleStyle: {
-            fontSize: 20,
-            fontWeight: 'normal',
-            color: 'black',
-            padding: 4,
-          },
-          tabBarIcon: ({ color }) => <Image source={require('../../assets/images/aichatbot.png')} style={{ width: 30, height: 30 }} />,
+          headerTitle: 'AI Assistant',
+          tabBarLabel: 'Support',
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="robot-outline" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="bengkelP"
         options={{
-          headerTitle: 'Bengkel Details',
-          href: null, // Hides the icon from the tab bar
-          tabBarStyle: { display: 'none' }, // Hides the tab bar when on this screen
+          headerTitle: 'Workshop',
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
+      <Tabs.Screen
+        name="profileP"
+        options={{
+          headerTitle: 'Settings',
+          href: null,
+          tabBarLabel: 'Profile',
         }}
       />
     </Tabs>
@@ -178,41 +143,62 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    backgroundColor: '#fff',
+    height: 100,
+  },
+  headerTitle: {
+    fontWeight: 'bold',
+    fontSize: 22,
+    color: '#0f172a',
+  },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingRight: 15,
   },
-  iconButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
-    marginLeft: 10,
-  },
-  searchBar__expanded: {
-    width: 180,
+  searchBarSurface: {
+    width: 200,
     height: 40,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    // Removed borderWidth and borderColor to get rid of the lines
-    // Subtle shadow remains for depth
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  searchBar__collapsed: {
-    width: 0,
-    overflow: 'hidden',
+    backgroundColor: '#f1f5f9',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
   },
   input: {
-    width: 150,
-    fontSize: 15,
-    color: '#333',
-    fontWeight: '400',
+    fontSize: 14,
+    color: '#0f172a',
+  },
+  profileBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  tabBar: {
+    height: 65,
+    paddingBottom: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+    backgroundColor: '#fff',
+  },
+  tabBarLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  sosIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#ef4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: -25,
+    borderWidth: 4,
+    borderColor: '#fff',
   },
 });

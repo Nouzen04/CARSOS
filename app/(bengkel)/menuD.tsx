@@ -1,7 +1,13 @@
 import { collection, doc, onSnapshot, query, updateDoc, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TouchableHighlight, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View, TouchableHighlight, TouchableOpacity } from 'react-native';
+import { Text, SegmentedButtons, IconButton, Surface, useTheme } from 'react-native-paper';
 import { db } from '../../firebase';
+import { ModernCard } from '@/components/ModernCard';
+import { LinearGradient } from 'expo-linear-gradient';
+import Colors from '@/constants/Colors';
+import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const JobCard = ({ job, type }: { job: any, type: 'incoming' | 'waiting' }) => {
     const handleStatusUpdate = async (newStatus: string) => {
@@ -14,68 +20,75 @@ const JobCard = ({ job, type }: { job: any, type: 'incoming' | 'waiting' }) => {
         }
     };
 
+    const statusColor = job.status === 'Pending' ? '#ef4444' : '#10b981';
+
     return (
-        <View style={styles.card}>
-            <Text style={styles.cardTitle}>{type === 'incoming' ? 'Incoming Request' : 'Ongoing Job'}</Text>
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Driver:</Text>
-                <Text style={styles.value}>{job.pemanduName || 'Unknown driver'}</Text>
-            </View>
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Contact via:</Text>
-                <Text style={styles.value}>{job.contactMethod}</Text>
-            </View>
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Time:</Text>
-                <Text style={styles.value}>{job.timestamp?.toDate().toLocaleString() || 'N/A'}</Text>
-            </View>
-            <View style={styles.detailRow}>
-                <Text style={styles.label}>Status:</Text>
-                <Text style={[styles.value, { color: job.status === 'Pending' ? '#E31E24' : '#4CAF50', fontWeight: 'bold' }]}>
-                    {job.status}
+        <ModernCard style={styles.card} elevation={2}>
+            <View style={styles.cardHeader}>
+                <View style={[styles.statusIndicator, { backgroundColor: statusColor }]} />
+                <Text variant="titleSmall" style={[styles.statusText, { color: statusColor }]}>
+                    {job.status.toUpperCase()}
+                </Text>
+                <Text variant="bodySmall" style={styles.timeText}>
+                    {job.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || 'N/A'}
                 </Text>
             </View>
 
-            <View style={styles.pillContainer}>
+            <View style={styles.cardBody}>
+                <View style={styles.infoRow}>
+                    <View style={styles.iconCircle}>
+                        <MaterialCommunityIcons name="account" size={20} color={Colors.light.primary} />
+                    </View>
+                    <View>
+                        <Text variant="labelSmall" style={styles.infoLabel}>Driver</Text>
+                        <Text variant="bodyMedium" style={styles.infoValue}>{job.pemanduName || 'Unknown driver'}</Text>
+                    </View>
+                </View>
+
+                <View style={styles.infoRow}>
+                    <View style={styles.iconCircle}>
+                        <MaterialCommunityIcons name="phone" size={20} color={Colors.light.primary} />
+                    </View>
+                    <View>
+                        <Text variant="labelSmall" style={styles.infoLabel}>Contact Method</Text>
+                        <Text variant="bodyMedium" style={styles.infoValue}>{job.contactMethod}</Text>
+                    </View>
+                </View>
+            </View>
+
+            <View style={styles.cardFooter}>
                 {job.status === 'Pending' ? (
-                    <>
-                        <TouchableHighlight
-                            style={[styles.pill, { backgroundColor: '#4CAF50' }]}
+                    <View style={styles.actionButtons}>
+                        <TouchableOpacity 
+                            style={[styles.actionBtn, { backgroundColor: '#10b981' }]} 
                             onPress={() => handleStatusUpdate('Accepted')}
-                            underlayColor="#388E3C"
                         >
-                            <Text style={{ color: 'white', fontWeight: 'bold' }}>Accept Request</Text>
-                        </TouchableHighlight>
-                        <TouchableHighlight
-                            style={[styles.pill, { backgroundColor: '#F44336', marginTop: 8 }]}
+                            <Text style={styles.actionBtnText}>Accept</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            style={[styles.actionBtn, { backgroundColor: '#ef4444' }]} 
                             onPress={() => handleStatusUpdate('Cancelled')}
-                            underlayColor="#D32F2F"
                         >
-                            <Text style={{ color: 'white', fontWeight: 'bold' }}>Decline</Text>
-                        </TouchableHighlight>
-                    </>
+                            <Text style={styles.actionBtnText}>Decline</Text>
+                        </TouchableOpacity>
+                    </View>
                 ) : (
-                    <TouchableHighlight
-                        style={[styles.pill, { backgroundColor: '#896CFE' }]}
-                        onPress={() => console.log('View Details')}
-                        underlayColor="#6B4FE7"
-                    >
-                        <Text style={{ color: 'white', fontWeight: 'bold' }}>View Details & Tools</Text>
-                    </TouchableHighlight>
+                    <TouchableOpacity style={styles.viewDetailsBtn}>
+                        <Text style={styles.viewDetailsText}>View Details & Tools</Text>
+                        <Feather name="arrow-right" size={16} color="#fff" />
+                    </TouchableOpacity>
                 )}
             </View>
-        </View>
+        </ModernCard>
     );
 };
 
 export default function BengkelHome() {
-    const [activeTab, setActiveTab] = useState<'incoming' | 'waiting'>('incoming');
+    const [activeTab, setActiveTab] = useState('incoming');
     const [requests, setRequests] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Ideally we filter by workshop ID (bengkelID)
-        // For now, listing all for demo purposes or using the placeholder
         const q = query(
             collection(db, 'service_requests'),
             where('bengkelID', '==', 'SNSService123')
@@ -98,137 +111,194 @@ export default function BengkelHome() {
     );
 
     return (
-        <ScrollView style={styles.mainContainer}>
-            <View style={styles.container}>
-                <View style={styles.buttonContainer}>
-                    <Pressable
-                        onPress={() => setActiveTab('incoming')}
-                        style={({ pressed }) => [
-                            styles.button,
-                            { backgroundColor: activeTab === 'incoming' ? '#E2F163' : '#FFFFFF' }
-                        ]}
-                    >
-                        <Text style={styles.buttonText}>Incoming ({requests.filter(r => r.status === 'Pending').length})</Text>
-                    </Pressable>
+        <View style={styles.mainContainer}>
+            <LinearGradient
+                colors={[Colors.light.primary, Colors.light.secondary]}
+                style={styles.header}
+            >
+                <SafeAreaView style={styles.headerContent}>
+                    <Text variant="headlineSmall" style={styles.headerTitle}>Workshop Portal</Text>
+                    <Text variant="bodyMedium" style={styles.headerSubtitle}>Manage your active requests</Text>
+                </SafeAreaView>
+            </LinearGradient>
 
-                    <Pressable
-                        onPress={() => setActiveTab('waiting')}
-                        style={({ pressed }) => [
-                            styles.button,
-                            { backgroundColor: activeTab === 'waiting' ? '#E2F163' : '#FFFFFF' }
-                        ]}
-                    >
-                        <Text style={styles.buttonText}>Accepted ({requests.filter(r => r.status === 'Accepted').length})</Text>
-                    </Pressable>
-                </View>
+            <View style={styles.body}>
+                <SegmentedButtons
+                    value={activeTab}
+                    onValueChange={setActiveTab}
+                    buttons={[
+                        { value: 'incoming', label: `Incoming (${requests.filter(r => r.status === 'Pending').length})` },
+                        { value: 'waiting', label: `Active (${requests.filter(r => r.status === 'Accepted').length})` },
+                    ]}
+                    style={styles.segmentedButtons}
+                />
 
                 {loading ? (
-                    <ActivityIndicator size="large" color="#896CFE" style={{ marginTop: 40 }} />
+                    <ActivityIndicator size="large" color={Colors.light.primary} style={{ marginTop: 40 }} />
                 ) : (
-                    <View style={styles.listContainer}>
+                    <ScrollView 
+                        style={styles.scrollContainer} 
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={{ paddingBottom: 40 }}
+                    >
                         {filteredRequests.length > 0 ? (
                             filteredRequests.map(req => (
-                                <JobCard key={req.id} job={req} type={activeTab} />
+                                <JobCard key={req.id} job={req} type={activeTab as any} />
                             ))
                         ) : (
                             <View style={styles.emptyState}>
-                                <Text style={styles.emptyText}>No {activeTab} requests found.</Text>
+                                <View style={styles.emptyIconContainer}>
+                                    <MaterialCommunityIcons name="clipboard-text-outline" size={60} color="#cbd5e1" />
+                                </View>
+                                <Text variant="titleMedium" style={styles.emptyText}>No {activeTab} requests found.</Text>
+                                <Text variant="bodySmall" style={styles.emptySubtext}>We'll notify you when new jobs arrive.</Text>
                             </View>
                         )}
-                    </View>
+                    </ScrollView>
                 )}
             </View>
-        </ScrollView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
-        backgroundColor: '#F8F9FA',
+        backgroundColor: '#f8fafc',
     },
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        paddingBottom: 40,
+    header: {
+        height: 160,
+        borderBottomLeftRadius: 32,
+        borderBottomRightRadius: 32,
     },
-    buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-evenly',
-        padding: 20,
-        width: '100%',
-        backgroundColor: 'white',
-        borderBottomWidth: 1,
-        borderBottomColor: '#EEE',
+    headerContent: {
+        paddingHorizontal: 25,
     },
-    button: {
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 12,
-        borderColor: '#896CFE',
-        borderWidth: 1,
-        minWidth: 140,
-    },
-    buttonText: {
-        textAlign: 'center',
+    headerTitle: {
+        color: '#fff',
         fontWeight: 'bold',
-        color: '#000',
     },
-    listContainer: {
-        width: '100%',
-        padding: 16,
+    headerSubtitle: {
+        color: 'rgba(255,255,255,0.8)',
+        marginTop: 4,
+    },
+    body: {
+        flex: 1,
+        marginTop: -30,
+        paddingHorizontal: 20,
+    },
+    segmentedButtons: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        marginBottom: 20,
+    },
+    scrollContainer: {
+        flex: 1,
     },
     card: {
         backgroundColor: '#fff',
-        padding: 20,
-        borderRadius: 16,
+        padding: 0, // We'll use internal padding
         marginBottom: 16,
-        width: '100%',
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
+        overflow: 'hidden',
     },
-    cardTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#896CFE',
-        marginBottom: 12,
-        textTransform: 'uppercase',
-    },
-    detailRow: {
+    cardHeader: {
         flexDirection: 'row',
-        marginBottom: 6,
-    },
-    label: {
-        width: 100,
-        color: '#888',
-        fontSize: 14,
-    },
-    value: {
-        flex: 1,
-        color: '#333',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    pillContainer: {
-        marginTop: 15,
-        borderTopWidth: 1,
-        borderTopColor: '#EEE',
-        paddingTop: 15,
-    },
-    pill: {
-        borderRadius: 12,
-        paddingVertical: 12,
         alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f1f5f9',
+    },
+    statusIndicator: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginRight: 8,
+    },
+    statusText: {
+        fontWeight: 'bold',
+        flex: 1,
+    },
+    timeText: {
+        color: '#94a3b8',
+    },
+    cardBody: {
+        padding: 16,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    iconCircle: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#f1f5f9',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    infoLabel: {
+        color: '#64748b',
+        fontSize: 10,
+    },
+    infoValue: {
+        color: '#0f172a',
+        fontWeight: '600',
+    },
+    cardFooter: {
+        padding: 16,
+        backgroundColor: '#f8fafc',
+    },
+    actionButtons: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    actionBtn: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    actionBtnText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    viewDetailsBtn: {
+        backgroundColor: '#6366f1',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        borderRadius: 8,
+        gap: 8,
+    },
+    viewDetailsText: {
+        color: '#fff',
+        fontWeight: 'bold',
     },
     emptyState: {
         marginTop: 60,
         alignItems: 'center',
+        paddingHorizontal: 40,
+    },
+    emptyIconContainer: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: '#f1f5f9',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
     },
     emptyText: {
-        color: '#999',
-        fontSize: 16,
-    }
+        color: '#475569',
+        textAlign: 'center',
+    },
+    emptySubtext: {
+        color: '#94a3b8',
+        textAlign: 'center',
+        marginTop: 8,
+    },
 });

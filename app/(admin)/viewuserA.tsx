@@ -1,7 +1,8 @@
 import React from "react";
-import { CSVLink } from "react-csv";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Platform, Alert } from "react-native";
 import { DataTable, IconButton } from "react-native-paper";
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { collection, deleteDoc, doc, onSnapshot } from "firebase/firestore";
 import { db } from "../../firebase";
 
@@ -46,6 +47,44 @@ export default function ViewUser() {
         { label: 'Phone', key: 'phone' },
         { label: 'Role', key: 'role' },
     ];
+
+    const handleExportCSV = async () => {
+        try {
+            // 1. Generate CSV string
+            const headerRow = headers.map(h => h.label).join(',');
+            const bodyRows = users.map(user => 
+                headers.map(h => `"${user[h.key] || ''}"`).join(',')
+            ).join('\n');
+            const csvString = `${headerRow}\n${bodyRows}`;
+
+            if (Platform.OS === 'web') {
+                // 2a. Web: Trigger browser download
+                const blob = new Blob([csvString], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.setAttribute('hidden', '');
+                a.setAttribute('href', url);
+                a.setAttribute('download', 'users.csv');
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                // 2b. Mobile: Use FileSystem and Sharing
+                const fileUri = FileSystem.cacheDirectory + 'users.csv';
+                await FileSystem.writeAsStringAsync(fileUri, csvString);
+                
+                const isSharingAvailable = await Sharing.isAvailableAsync();
+                if (isSharingAvailable) {
+                    await Sharing.shareAsync(fileUri);
+                } else {
+                    Alert.alert("Sharing is not available on this device");
+                }
+            }
+        } catch (error) {
+            console.error("Export error:", error);
+            Alert.alert("Error", "Failed to export CSV.");
+        }
+    };
 
     const from = page * itemsPerPage;
     const to = Math.min((page + 1) * itemsPerPage, users.length);
@@ -93,10 +132,14 @@ export default function ViewUser() {
                         />
                     </DataTable>
                 </View>
-                <View>
-                    <CSVLink data={users} headers={headers} filename={'users.csv'} style={styles.csvLink}>
-                        Export to CSV
-                    </CSVLink>
+                <View style={{ marginTop: 20 }}>
+                    <TouchableOpacity 
+                        style={styles.csvLink} 
+                        onPress={handleExportCSV}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.csvLinkText}>Export to CSV</Text>
+                    </TouchableOpacity>
                 </View>
             </ScrollView>
         </View>
@@ -142,14 +185,20 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     csvLink: {
-        color: '#fff',
         backgroundColor: '#007bff',
-        padding: 12,
-        borderRadius: 8,
-        textAlign: 'center',
-        marginTop: 20,
-        textDecorationLine: 'none',
+        padding: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    csvLinkText: {
+        color: '#fff',
         fontWeight: 'bold',
-        overflow: 'hidden',
+        fontSize: 16,
     },
 });
