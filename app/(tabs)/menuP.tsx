@@ -1,8 +1,11 @@
-import { Href, router } from 'expo-router';
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Text, Surface, useTheme, Avatar } from 'react-native-paper';
+import { router } from 'expo-router';
+import { Image, ScrollView, StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { Text, Surface } from 'react-native-paper';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { ModernCard } from '@/components/ModernCard';
+import { useEffect, useState } from 'react';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../../firebase';
 import Colors from '@/constants/Colors';
 
 const SERVICES = [
@@ -13,6 +16,29 @@ const SERVICES = [
 ];
 
 export default function PemanduHomeScreen() {
+  const [workshops, setWorkshops] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchWorkshops();
+  }, []);
+
+  const fetchWorkshops = async () => {
+    try {
+      const q = query(collection(db, 'users'), where('role', '==', 'bengkel'));
+      const querySnapshot = await getDocs(q);
+      const list = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setWorkshops(list);
+    } catch (error) {
+      console.error("Error fetching workshops:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
@@ -44,54 +70,53 @@ export default function PemanduHomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <ModernCard style={styles.bengkelCard} elevation={2}>
-          <TouchableOpacity
-            activeOpacity={0.9}
-            style={styles.bengkelContent}
-            onPress={() => router.push('/bengkelP' as Href)}
-          >
-            <Image 
-              source={require('../../assets/images/benkel.png')} 
-              style={styles.bengkelImage} 
-              resizeMode="cover" 
-            />
-            <View style={styles.bengkelDetails}>
-              <View style={styles.bengkelTitleRow}>
-                <Text variant="titleLarge" style={styles.bengkelName}>SNS Service Center</Text>
-                <View style={styles.ratingBadge}>
-                  <MaterialCommunityIcons name="star" size={14} color="#f59e0b" />
-                  <Text style={styles.ratingText}>4.8</Text>
-                </View>
-              </View>
-              
-              <View style={styles.bengkelInfoRow}>
-                <Feather name="map-pin" size={14} color="#64748b" />
-                <Text variant="bodySmall" style={styles.bengkelInfoText}>2.4 km • 12 minutes away</Text>
-              </View>
-
-              <View style={styles.tagGrid}>
-                {['Towing', 'Tyre', 'Quick Fix'].map(tag => (
-                  <View key={tag} style={styles.tag}>
-                    <Text style={styles.tagText}>{tag}</Text>
+        {loading ? (
+          <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 20 }} />
+        ) : workshops.length > 0 ? (
+          workshops.map((workshop) => (
+            <ModernCard key={workshop.id} style={styles.bengkelCard} elevation={2}>
+              <TouchableOpacity
+                activeOpacity={0.9}
+                style={styles.bengkelContent}
+                onPress={() => router.push({ pathname: '/bengkelP', params: { id: workshop.id } } as any)}
+              >
+                <Image 
+                  source={require('../../assets/images/benkel.png')} 
+                  style={styles.bengkelImage} 
+                  resizeMode="cover" 
+                />
+                <View style={styles.bengkelDetails}>
+                  <View style={styles.bengkelTitleRow}>
+                    <Text variant="titleLarge" style={styles.bengkelName}>{workshop.name}</Text>
+                    <View style={styles.ratingBadge}>
+                      <MaterialCommunityIcons name="star" size={14} color="#f59e0b" />
+                      <Text style={styles.ratingText}>{workshop.rating || '0.0'}</Text>
+                    </View>
                   </View>
-                ))}
-              </View>
-            </View>
-          </TouchableOpacity>
-        </ModernCard>
+                  
+                  <View style={styles.bengkelInfoRow}>
+                    <Feather name="map-pin" size={14} color="#64748b" />
+                    <Text variant="bodySmall" style={styles.bengkelInfoText}>
+                      {workshop.address || 'Address not available'}
+                    </Text>
+                  </View>
 
-        {/* Placeholder for more cards */}
-        <ModernCard style={[styles.bengkelCard, { opacity: 0.7 }]} elevation={1}>
-          <View style={styles.bengkelContent}>
-             <View style={[styles.bengkelImage, { backgroundColor: '#e2e8f0', justifyContent: 'center', alignItems: 'center' }]}>
-                <MaterialCommunityIcons name="image-outline" size={40} color="#94a3b8" />
-             </View>
-             <View style={styles.bengkelDetails}>
-                <Text variant="titleLarge" style={styles.bengkelName}>Modern Auto Clinic</Text>
-                <Text variant="bodySmall" style={styles.bengkelInfoText}>3.8 km • 18 minutes away</Text>
-             </View>
+                  <View style={styles.tagGrid}>
+                    {(workshop.selectedServices || ['General Service']).map((tag: string) => (
+                      <View key={tag} style={styles.tag}>
+                        <Text style={styles.tagText}>{tag}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </ModernCard>
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <Text>No workshops found nearby.</Text>
           </View>
-        </ModernCard>
+        )}
       </View>
     </ScrollView>
   );
@@ -210,5 +235,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#475569',
     fontWeight: '500',
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
   },
 });

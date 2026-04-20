@@ -2,7 +2,7 @@ import { collection, doc, onSnapshot, query, updateDoc, where } from 'firebase/f
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View, TouchableHighlight, TouchableOpacity } from 'react-native';
 import { Text, SegmentedButtons, IconButton, Surface, useTheme } from 'react-native-paper';
-import { db } from '../../firebase';
+import { auth, db } from '../../firebase';
 import { ModernCard } from '@/components/ModernCard';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/Colors';
@@ -72,12 +72,21 @@ const JobCard = ({ job, type }: { job: any, type: 'incoming' | 'waiting' }) => {
                             <Text style={styles.actionBtnText}>Decline</Text>
                         </TouchableOpacity>
                     </View>
+                ) : job.status === 'Accepted' ? (
+                    <TouchableOpacity 
+                        style={[styles.viewDetailsBtn, { backgroundColor: '#3b82f6' }]} 
+                        onPress={() => handleStatusUpdate('Completed')}
+                    >
+                        <MaterialCommunityIcons name="check-all" size={20} color="#fff" />
+                        <Text style={styles.viewDetailsText}>Complete Job</Text>
+                    </TouchableOpacity>
                 ) : (
                     <TouchableOpacity style={styles.viewDetailsBtn}>
                         <Text style={styles.viewDetailsText}>View Details & Tools</Text>
                         <Feather name="arrow-right" size={16} color="#fff" />
                     </TouchableOpacity>
-                )}
+                )
+                }
             </View>
         </ModernCard>
     );
@@ -89,9 +98,11 @@ export default function BengkelHome() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (!auth.currentUser) return;
+
         const q = query(
             collection(db, 'service_requests'),
-            where('bengkelID', '==', 'SNSService123')
+            where('bengkelID', '==', auth.currentUser.uid)
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {

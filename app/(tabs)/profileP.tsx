@@ -3,7 +3,7 @@ import { Text, Avatar, IconButton, Surface, useTheme } from 'react-native-paper'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { auth, db } from '../../firebase';
 import { signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, addDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { router, Href } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -57,6 +57,45 @@ export default function PemanduProfile() {
         },
       ]
     );
+  };
+
+  const seedRatingData = async () => {
+    setLoading(true);
+    try {
+      const q = query(collection(db, 'users'), where('role', '==', 'bengkel'));
+      const querySnapshot = await getDocs(q);
+      
+      for (const workshopDoc of querySnapshot.docs) {
+        const workshopId = workshopDoc.id;
+        const scores = [5, 4, 5];
+        const comments = ["Excellent!", "Good job", "Fast service"];
+        let total = 0;
+        
+        for (let i = 0; i < scores.length; i++) {
+          await addDoc(collection(db, 'ratings'), {
+            bengkelID: workshopId,
+            pemanduID: 'seed_pemandu',
+            requestID: 'seed_' + workshopId + '_' + i,
+            score: scores[i],
+            comment: comments[i],
+            timestamp: serverTimestamp()
+          });
+          total += scores[i];
+        }
+        
+        await updateDoc(doc(db, 'users', workshopId), {
+          rating: Number((total / scores.length).toFixed(1)),
+          totalRating: total,
+          reviewCount: scores.length
+        });
+      }
+      Alert.alert("Success", "Workshops have been seeded with dummy ratings!");
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Failed to seed data.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
@@ -140,6 +179,11 @@ export default function PemanduProfile() {
             <Feather name="log-out" size={20} color="#ef4444" />
             <Text variant="titleMedium" style={styles.logoutText}>Log Out</Text>
           </LinearGradient>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.seedBtn} onPress={seedRatingData}>
+            <Feather name="database" size={16} color="#64748b" />
+            <Text variant="bodySmall" style={styles.seedText}>Seed Rating Data (Dev Only)</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -255,5 +299,15 @@ const styles = StyleSheet.create({
   logoutText: {
     color: '#ef4444',
     fontWeight: 'bold',
+  },
+  seedBtn: {
+    padding: 20,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  seedText: {
+    color: '#64748b',
   },
 });

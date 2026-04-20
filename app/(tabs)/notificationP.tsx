@@ -1,12 +1,16 @@
 import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { RatingModal } from '../../components/RatingModal';
 import { auth, db } from '../../firebase';
 
 export default function NotificationScreen() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ratingModalVisible, setRatingModalVisible] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
 
   useEffect(() => {
     if (!auth.currentUser) {
@@ -71,30 +75,57 @@ export default function NotificationScreen() {
           <View style={{ width: '100%', alignItems: 'center' }}>
             {notifications.length > 0 ? (
               notifications.map((notif) => (
-                <View key={notif.id} style={styles.card}>
-                  <View style={styles.iconContainer}>
-                    <Image
-                      source={require('../../assets/images/wrench.png')}
-                      style={[styles.icon, { tintColor: getStatusColor(notif.status) }]}
-                      resizeMode="contain"
-                    />
+                <View key={notif.id} style={styles.cardContainer}>
+                  <View style={styles.card}>
+                    <View style={styles.iconContainer}>
+                      <Image
+                        source={require('../../assets/images/wrench.png')}
+                        style={[styles.icon, { tintColor: getStatusColor(notif.status) }]}
+                        resizeMode="contain"
+                      />
+                    </View>
+                    <View style={styles.cardContent}>
+                      <Text style={styles.cardTitle}>{notif.workshopName || 'Service Update'}</Text>
+                      <Text style={styles.cardText}>{getStatusMessage(notif.status, notif.workshopName)}</Text>
+                      <Text style={styles.timeText}>
+                        {notif.timestamp?.toDate().toLocaleString()}
+                      </Text>
+                    </View>
+                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(notif.status) }]}>
+                      <Text style={styles.statusText}>{notif.status}</Text>
+                    </View>
                   </View>
-                  <View style={styles.cardContent}>
-                    <Text style={styles.cardTitle}>{notif.workshopName || 'Service Update'}</Text>
-                    <Text style={styles.cardText}>{getStatusMessage(notif.status, notif.workshopName)}</Text>
-                    <Text style={styles.timeText}>
-                      {notif.timestamp?.toDate().toLocaleString()}
-                    </Text>
-                  </View>
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(notif.status) }]}>
-                    <Text style={styles.statusText}>{notif.status}</Text>
-                  </View>
+                  {notif.status === 'Completed' && (
+                    <Button
+                      mode="contained"
+                      onPress={() => {
+                        setSelectedRequest(notif);
+                        setRatingModalVisible(true);
+                      }}
+                      style={styles.rateBtn}
+                      labelStyle={styles.rateBtnLabel}
+                      icon="star"
+                    >
+                      Rate Workshop
+                    </Button>
+                  )}
                 </View>
               ))
             ) : (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyText}>No notifications yet.</Text>
               </View>
+            )}
+
+            {selectedRequest && (
+              <RatingModal
+                visible={ratingModalVisible}
+                onClose={() => setRatingModalVisible(false)}
+                request={selectedRequest}
+                onSuccess={() => {
+                  // Optionally refresh or update local state
+                }}
+              />
             )}
           </View>
         )}
@@ -120,12 +151,15 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     marginLeft: 10,
   },
+  cardContainer: {
+    width: '100%',
+    marginBottom: 16,
+  },
   card: {
     width: '100%',
     backgroundColor: 'white',
     borderRadius: 16,
     padding: 16,
-    marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 3,
@@ -187,5 +221,18 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#999',
     fontSize: 16,
+  },
+  rateBtn: {
+    marginTop: -8,
+    marginHorizontal: 16,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    backgroundColor: '#0f172a',
+  },
+  rateBtnLabel: {
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

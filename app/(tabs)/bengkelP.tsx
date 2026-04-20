@@ -33,24 +33,8 @@ export default function infoBengkel() {
             if (docSnap.exists()) {
                 setBengkelData(docSnap.data());
             } else {
-                // If not found, use hardcoded data as fallback for now
-                setBengkelData({
-                    name: 'SNS Service',
-                    address: 'No. 12, Jalan Industrial 1/1, Taman Perindustrian Utama, 47100 Puchong, Selangor',
-                    rating: 4.8,
-                    reviews: 120,
-                    description: 'Professional car maintenance and repair services with over 15 years of experience. We specialize in engine diagnostics, major servicing, and suspension work for all major car brands.',
-                    services: [
-                        { name: 'Full Service', icon: 'settings' },
-                        { name: 'Tire Change', icon: 'disc' },
-                        { name: 'Brake Repair', icon: 'tool' },
-                        { name: 'Engine Tune', icon: 'activity' },
-                        { name: 'Oil Service', icon: 'droplet' },
-                        { name: 'Aircond', icon: 'wind' }
-                    ],
-                    facilities: ['Free WiFi', 'Lounge', 'Aircond Room'],
-                    location: { latitude: 3.003, longitude: 101.621 } // Puchong area
-                });
+                Alert.alert("Error", "Workshop data not found.");
+                router.back();
             }
         } catch (error) {
             console.error("Error fetching bengkel:", error);
