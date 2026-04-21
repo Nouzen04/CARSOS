@@ -1,7 +1,8 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import React, { useRef, useState } from 'react';
+import { marked } from 'marked';
+import { useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -13,11 +14,10 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
+    useWindowDimensions,
     View
 } from 'react-native';
-import { marked } from 'marked';
 import RenderHTML from 'react-native-render-html';
-import { useWindowDimensions } from 'react-native';
 import { auth, db } from '../../firebase'; // Accessing configured Firestore and Auth
 
 // Configuration - USER NEEDS TO ADD THEIR GEMINI API KEY HERE
@@ -51,6 +51,7 @@ export default function AIChatScreen() {
     const [inputText, setInputText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const flatListRef = useRef<FlatList>(null);
+    const { width } = useWindowDimensions();
 
     // System Instruction to make the AI a Car Expert
     const SYSTEM_INSTRUCTION =
@@ -142,7 +143,7 @@ export default function AIChatScreen() {
                 <Text style={styles.userText}>{item.text}</Text>
             ) : (
                 <RenderHTML
-                    contentWidth={useWindowDimensions().width}
+                    contentWidth={width}
                     source={{ html: marked.parse(item.text) as string }}
                     baseStyle={{
                         color: '#2C3E50',
@@ -170,9 +171,9 @@ export default function AIChatScreen() {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
             style={styles.container}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 95 : 95}
         >
             <View style={styles.header}>
                 <View style={styles.botIcon}>

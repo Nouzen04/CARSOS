@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View, ActivityIndicator } from "react-native";
-import { Text, Surface } from "react-native-paper";
-import { useLocalSearchParams } from "expo-router";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../../firebase";
 import { ModernCard } from "@/components/ModernCard";
-import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import Colors from "@/constants/Colors";
+import { Feather } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { Surface, Text } from "react-native-paper";
+import { db } from "../../firebase";
 
 export default function ReportDetail() {
     const { id, name } = useLocalSearchParams();
@@ -37,12 +37,12 @@ export default function ReportDetail() {
             const completed = requests.filter(r => r.status === 'completed').length;
             const cancelled = requests.filter(r => r.status === 'cancelled').length;
             const ratings = requests.filter(r => r.rating).map(r => r.rating);
-            
-            const avgRating = ratings.length > 0 
+
+            const avgRating = ratings.length > 0
                 ? (ratings.reduce((a, b: any) => a + b, 0) / ratings.length).toFixed(1)
                 : 0;
-            
-            const successRate = total > 0 
+
+            const successRate = total > 0
                 ? ((completed / total) * 100).toFixed(1)
                 : 0;
 
