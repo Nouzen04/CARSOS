@@ -29,6 +29,29 @@ export function toGeoPoint(coords: Coords): GeoPoint {
     return new GeoPoint(coords.latitude, coords.longitude);
 }
 
+/** Convert coordinates to a human-readable address string */
+export async function getAddressFromCoords(coords: Coords): Promise<string> {
+    try {
+        const address = await Location.reverseGeocodeAsync({
+            latitude: coords.latitude,
+            longitude: coords.longitude
+        });
+
+        if (address && address.length > 0) {
+            const item = address[0];
+            const street = item.street || item.name || "";
+            const city = item.city || item.district || "";
+            const region = item.region || "";
+            
+            return `${street}${street ? ", " : ""}${city}${city ? ", " : ""}${region}`.trim() || "Address not found";
+        }
+        return "Address not found";
+    } catch (error) {
+        console.error("Reverse geocoding error:", error);
+        return "Address lookup failed";
+    }
+}
+
 /** Convert a Firestore GeoPoint back to a plain Coords object */
 export function fromGeoPoint(geoPoint: { latitude: number; longitude: number }): Coords {
     return {

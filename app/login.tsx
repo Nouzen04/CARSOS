@@ -15,7 +15,6 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const theme = useTheme();
 
   const signIn = async () => {
     if (!email || !password) {
@@ -36,7 +35,11 @@ export default function LoginScreen() {
           if (role === 'admin') {
             router.replace('/menuA' as Href);
           } else if (role === 'bengkel') {
-            router.replace('/menuD' as Href);
+            if (userData.verified === false) {
+              router.replace('/waitingVerification' as Href);
+            } else {
+              router.replace('/menuD' as Href);
+            }
           } else {
             router.replace('/menuP' as Href);
           }

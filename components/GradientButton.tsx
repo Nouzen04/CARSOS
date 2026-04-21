@@ -1,13 +1,13 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, TouchableOpacityProps, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, TouchableOpacityProps, View, ActivityIndicator, useColorScheme } from 'react-native';
 import Colors from '@/constants/Colors';
-import { useColorScheme } from './useColorScheme';
 
 interface GradientButtonProps extends TouchableOpacityProps {
   title: string;
   colors?: string[];
   textColor?: string;
+  loading?: boolean;
 }
 
 export function GradientButton({ 
@@ -16,19 +16,17 @@ export function GradientButton({
   colors, 
   textColor = '#ffffff', 
   style, 
+  loading = false,
   ...props 
 }: GradientButtonProps) {
-  const colorScheme = useColorScheme() ?? 'light';
-  const defaultColors = [
-    Colors[colorScheme].primary,
-    Colors[colorScheme].secondary,
-  ];
+  const defaultColors = ['#6366f1', '#a855f7']; // Use static brand colors
 
   return (
     <TouchableOpacity 
-      onPress={onPress} 
+      onPress={loading ? undefined : onPress} 
       activeOpacity={0.8} 
       style={[styles.container, style]} 
+      disabled={loading}
       {...props}
     >
       <LinearGradient
@@ -37,7 +35,11 @@ export function GradientButton({
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
       >
-        <Text style={[styles.text, { color: textColor }]}>{title}</Text>
+        {loading ? (
+          <ActivityIndicator color={textColor} size="small" />
+        ) : (
+          <Text style={[styles.text, { color: textColor }]}>{title}</Text>
+        )}
       </LinearGradient>
     </TouchableOpacity>
   );

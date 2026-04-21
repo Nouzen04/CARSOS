@@ -1,21 +1,30 @@
 import Feather from '@expo/vector-icons/Feather';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { useLocalSearchParams, router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { Dimensions, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert, ActivityIndicator } from "react-native";
 import * as Location from 'expo-location';
-import { auth, db } from '../../firebase';
-import { formatDistance, getDistance, getGoogleMapsUrl, getDirectionsUrl } from '../../utils/mapService';
+import { router, useLocalSearchParams } from 'expo-router';
+import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Dimensions, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapComponent from '../../components/MapComponent';
+import { auth, db } from '../../firebase';
+import { formatDistance, getDirectionsUrl, getDistance, getGoogleMapsUrl } from '../../utils/mapService';
 
 const { width } = Dimensions.get('window');
+
+const SERVICES = [
+    { id: 1, name: 'Full Service', icon: 'settings' },
+    { id: 2, name: 'Tire Change', icon: 'disc' },
+    { id: 3, name: 'Brake Repair', icon: 'tool' },
+    { id: 4, name: 'Engine Tune', icon: 'activity' },
+    { id: 5, name: 'Oil Service', icon: 'droplet' },
+    { id: 6, name: 'Aircond', icon: 'wind' }
+];
 
 export default function infoBengkel() {
     const params = useLocalSearchParams();
     const workshopId = params.id as string || 'SNSService123'; // Fallback for testing
-    
+
     const [bengkelData, setBengkelData] = useState<any>(null);
     const [driverLocation, setDriverLocation] = useState<{ latitude: number, longitude: number } | null>(null);
     const [distance, setDistance] = useState<number | null>(null);
@@ -91,13 +100,14 @@ export default function infoBengkel() {
     };
 
     const handleCall = async () => {
+        const number = bengkelData?.phone;
         await createServiceRequest('call');
-        Linking.openURL('tel:+60123456789'); // Example number
+        Linking.openURL('tel:+60' + number);
     };
 
     const handleDirections = () => {
         if (bengkelData?.location) {
-            const url = driverLocation 
+            const url = driverLocation
                 ? getDirectionsUrl(driverLocation, { latitude: bengkelData.location.latitude, longitude: bengkelData.location.longitude })
                 : getGoogleMapsUrl(bengkelData.location.latitude, bengkelData.location.longitude, bengkelData.name);
             Linking.openURL(url);
@@ -115,8 +125,10 @@ export default function infoBengkel() {
     }
 
     const handleWhatsApp = async () => {
+        const number = bengkelData?.phone;
+        const name = bengkelData?.name;
         await createServiceRequest('whatsapp');
-        Linking.openURL('whatsapp://send?phone=+60123456789&text=Hello SNS Service, I need assistance with my car.');
+        Linking.openURL('whatsapp://send?phone=+60' + number + '&text=Hello ' + name + ', I need assistance with my car.');
     };
 
     return (
@@ -171,7 +183,7 @@ export default function infoBengkel() {
                     {/* Map Integration */}
                     {bengkelData?.location && (
                         <View style={styles.mapSection}>
-                            <MapComponent 
+                            <MapComponent
                                 bengkelLocation={{
                                     latitude: bengkelData.location.latitude,
                                     longitude: bengkelData.location.longitude
@@ -206,7 +218,7 @@ export default function infoBengkel() {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Services Offered</Text>
                     <View style={styles.servicesGrid}>
-                        {(bengkelData?.services || []).map((item: any, index: number) => (
+                        {SERVICES.filter(service => (bengkelData?.selectedServices || []).includes(service.id)).map((item: any, index: number) => (
                             <View key={index} style={styles.serviceItem}>
                                 <Feather name={item.icon as any} size={20} color="#333" />
                                 <Text style={styles.serviceName}>{item.name}</Text>
@@ -218,15 +230,21 @@ export default function infoBengkel() {
                 {/* Facilities */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Facilities</Text>
-                    <View style={styles.facilitiesRow}>
-                        {(bengkelData?.facilities || []).map((facility: string, index: number) => (
-                            <View key={index} style={styles.facility}>
+                    <View style={styles.servicesGrid}>
+                        {(Array.isArray(bengkelData?.facilities)
+                            ? bengkelData.facilities
+                            : (typeof bengkelData?.facilities === 'string'
+                                ? bengkelData.facilities.split(',').map((s: string) => s.trim())
+                                : [])
+                        ).map((facility: string, index: number) => (
+                            <View key={index} style={styles.serviceItem}>
                                 <Feather name="check-circle" size={14} color="#4CAF50" />
-                                <Text style={styles.facilityText}>{facility}</Text>
+                                <Text style={styles.serviceName}>{facility}</Text>
                             </View>
                         ))}
                     </View>
                 </View>
+                <View style={{ height: 20 }} />
             </View>
 
             {/* Bottom Action Bar */}

@@ -1,18 +1,21 @@
+// Signup screen for both Drivers and Workshops
+import { GradientButton } from '@/components/GradientButton';
+import { ModernCard } from '@/components/ModernCard';
+import Colors from '@/constants/Colors';
 import Feather from '@expo/vector-icons/Feather';
+import * as DocumentPicker from 'expo-document-picker';
 import { Checkbox } from 'expo-checkbox';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Href, router } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useState } from "react";
-import { Alert, StyleSheet, TouchableOpacity, View, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
-import { TextInput, Text, SegmentedButtons, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { SegmentedButtons, Text, TextInput } from 'react-native-paper';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from 'expo-linear-gradient';
-import { auth, db } from "../firebase";
-import { getCurrentLocation, toGeoPoint } from "../utils/mapService";
-import { ModernCard } from '@/components/ModernCard';
-import { GradientButton } from '@/components/GradientButton';
-import Colors from '@/constants/Colors';
+import { auth, db, storage } from "../firebase";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { getCurrentLocation, toGeoPoint, getAddressFromCoords } from "../utils/mapService";
 
 interface Service {
   id: number;
@@ -29,14 +32,20 @@ const SERVICES = [
   { id: 6, name: 'Aircond', icon: 'wind' }
 ];
 
+const COMMON_FACILITIES = [
+  'WiFi', 'Waiting Area', 'Prayer Room', 'Toilet', 'Cafe / Vending', 'Air Conditioning', 'Parking'
+];
+
 export default function SignupScreen() {
+  const [selectedFiles, setSelectedFiles] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [workshopName, setWorkshopName] = useState('');
   const [address, setAddress] = useState('');
-  const [facilities, setFacilities] = useState('');
+  const [facilities, setFacilities] = useState<string[]>([]);
   const [description, setDescription] = useState('');
   const [role, setRole] = useState('pemandu');
   const [location, setLocation] = useState<{ latitude: number, longitude: number } | null>(null);
@@ -44,22 +53,55 @@ export default function SignupScreen() {
   const [selectedServices, setSelectedServices] = useState<number[]>([]);
   const [showPassword, setShowPassword] = useState(false);
 
+  // Handlers for launching file picker
+  const selectFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*', 
+        multiple: true,
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled) {
+        setSelectedFiles(prev => [...prev, ...result.assets]);
+        console.log('Files selected:', result.assets.length);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick document');
+      console.error('Error picking document:', error);
+    }
+  }
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+
   const toggleService = (id: number) => {
     setSelectedServices(prev =>
       prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
     );
   };
 
+  const toggleFacility = (facility: string) => {
+    setFacilities(prev =>
+      prev.includes(facility) ? prev.filter(f => f !== facility) : [...prev, facility]
+    );
+  };
+
   const handleGetLocation = async () => {
     setLoadingLocation(true);
     const loc = await getCurrentLocation();
-    setLoadingLocation(false);
     if (loc) {
       setLocation(loc);
-      Alert.alert("Success", "Location captured successfully!");
+      // Automatically lookup address
+      const addr = await getAddressFromCoords(loc);
+      setAddress(addr);
+      Alert.alert("Success", "Location and address captured!");
     } else {
       Alert.alert("Error", "Could not get your location. Please check your GPS settings.");
     }
+    setLoadingLocation(false);
   };
 
   const signUp = async () => {
@@ -83,22 +125,42 @@ export default function SignupScreen() {
         };
 
         if (role === 'bengkel') {
-          userData.name = workshopName; 
+          userData.name = workshopName;
           userData.address = address;
           userData.selectedServices = selectedServices;
           userData.facilities = facilities;
           userData.description = description;
-          userData.verified = false; 
+          userData.verified = false;
           if (location) {
             userData.location = toGeoPoint(location);
+          }
+
+          // Handle multi-file upload
+          if (selectedFiles.length > 0) {
+            setUploading(true);
+            try {
+              const uploadPromises = selectedFiles.map(async (file) => {
+                const response = await fetch(file.uri);
+                const blob = await response.blob();
+                const storageRef = ref(storage, `workshop_docs/${user.uid}/${file.name || `doc_${Date.now()}`}`);
+                await uploadBytes(storageRef, blob);
+                return getDownloadURL(storageRef);
+              });
+              userData.documentURLs = await Promise.all(uploadPromises);
+            } catch (uploadError) {
+              console.error("Error uploading documents:", uploadError);
+              Alert.alert("Warning", "Account created, but some documents failed to upload.");
+            } finally {
+              setUploading(false);
+            }
           }
         }
 
         await setDoc(doc(db, "users", user.uid), userData);
         Alert.alert("Success", "Account created successfully!");
-        
+
         if (role === 'bengkel') {
-          router.replace('/menuD' as Href);
+          router.replace('/waitingVerification' as Href);
         } else if (role === 'admin') {
           router.replace('/menuA' as Href);
         } else {
@@ -112,7 +174,7 @@ export default function SignupScreen() {
   }
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
@@ -195,8 +257,8 @@ export default function SignupScreen() {
                   left={<TextInput.Icon icon="map-marker-outline" color={Colors.light.primary} />}
                 />
 
-                <TouchableOpacity 
-                  style={[styles.locationBtn, location ? styles.locationBtnSuccess : null]} 
+                <TouchableOpacity
+                  style={[styles.locationBtn, location ? styles.locationBtnSuccess : null]}
                   onPress={handleGetLocation}
                   disabled={loadingLocation}
                 >
@@ -234,14 +296,27 @@ export default function SignupScreen() {
                   ))}
                 </View>
 
-                <TextInput
-                  mode="outlined"
-                  label="Facilities"
-                  value={facilities}
-                  onChangeText={setFacilities}
-                  placeholder="e.g. WiFi, Waiting Room, Coffee"
-                  style={styles.input}
-                />
+                <Text variant="titleSmall" style={styles.sectionLabel}>Facilities</Text>
+                <View style={styles.servicesGrid}>
+                  {COMMON_FACILITIES.map((facility) => (
+                    <TouchableOpacity
+                      key={facility}
+                      style={[
+                        styles.serviceItem,
+                        facilities.includes(facility) && styles.serviceItemSelected
+                      ]}
+                      onPress={() => toggleFacility(facility)}
+                    >
+                      <Checkbox
+                        value={facilities.includes(facility)}
+                        onValueChange={() => toggleFacility(facility)}
+                        color={facilities.includes(facility) ? Colors.light.primary : undefined}
+                        style={styles.checkbox}
+                      />
+                      <Text style={styles.serviceLabel}>{facility}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
 
                 <TextInput
                   mode="outlined"
@@ -252,6 +327,33 @@ export default function SignupScreen() {
                   numberOfLines={4}
                   style={styles.input}
                 />
+                <Text style={styles.sectionLabel}>Business Verification</Text>
+                <TouchableOpacity
+                  style={styles.uploadBtn}
+                  onPress={selectFile}
+                >
+                  <Feather name="upload-cloud" size={20} color={Colors.light.primary} />
+                  <Text style={styles.uploadBtnText}>Upload Business License</Text>
+                </TouchableOpacity>
+
+                {selectedFiles.length > 0 && (
+                  <View style={styles.filesList}>
+                    {selectedFiles.map((file, index) => (
+                      <View key={index} style={styles.fileInfoContainer}>
+                        <View style={styles.fileIconCircle}>
+                          <Feather name="file-text" size={18} color="#6366f1" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.fileInfoText} numberOfLines={1}>{file.name}</Text>
+                          <Text style={styles.fileInfoSubtext}>{(file.size / 1024).toFixed(2)} KB</Text>
+                        </View>
+                        <TouchableOpacity onPress={() => removeFile(index)}>
+                          <Feather name="x-circle" size={20} color="#94a3b8" />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
               </View>
             )}
 
@@ -259,6 +361,7 @@ export default function SignupScreen() {
               title="Create Account" 
               onPress={signUp} 
               style={styles.button}
+              loading={uploading}
             />
 
             <View style={styles.footer}>
@@ -383,4 +486,54 @@ const styles = StyleSheet.create({
     color: '#6366f1',
     fontWeight: 'bold',
   },
-});
+  filesList: {
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  uploadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#6366f1',
+    gap: 10,
+    marginBottom: 16,
+  },
+  uploadBtnText: {
+    color: '#6366f1',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  fileInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    gap: 12,
+    marginBottom: 20,
+  },
+  fileIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#eef2ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fileInfoText: {
+    fontSize: 14,
+    color: '#0f172a',
+    fontWeight: '600',
+  },
+  fileInfoSubtext: {
+    fontSize: 12,
+    color: '#64748b',
+  },
+});

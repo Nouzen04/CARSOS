@@ -1,42 +1,40 @@
+import { Href, router } from "expo-router";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import React from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { DataTable } from "react-native-paper";
+import { ActivityIndicator, DataTable } from "react-native-paper";
+import { db } from "../../firebase";
 
 export default function Report() {
 
     const [page, setPage] = React.useState<number>(0);
     const [numberOfItemsPerPageList] = React.useState([3, 5, 10]);
     const [itemsPerPage, onItemsPerPageChange] = React.useState(numberOfItemsPerPageList[0]);
-    const [workshops, setWorkshops] = React.useState([
-        {
-            key: 1,
-            orgName: 'AutoFix Mechanics',
-            address: '123 Engine Blvd, Motor City',
-            contact: '012-3456789',
-            status: 'Pending',
-        },
-        {
-            key: 2,
-            orgName: 'Speedy Tyres & Services',
-            address: '45 Wheel Array, Auto Town',
-            contact: '019-8765432',
-            status: 'Pending',
-        },
-        {
-            key: 3,
-            orgName: 'Pro Care Auto',
-            address: '78 Spark Plug Street, Gear City',
-            contact: '011-2345678',
-            status: 'Pending',
-        },
-        {
-            key: 4,
-            orgName: 'Elite Motors Bengkel',
-            address: '99 Turbo Ave, Central Dist',
-            contact: '016-5554443',
-            status: 'Pending',
-        },
-    ]);
+    const [workshops, setWorkshops] = React.useState<any[]>([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        // Fetch only verified workshops for reporting
+        const q = query(
+            collection(db, "users"),
+            where("role", "==", "bengkel"),
+            where("verified", "==", true)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const list = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setWorkshops(list);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching reports:", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, []);
     const from = page * itemsPerPage;
     const to = Math.min((page + 1) * itemsPerPage, workshops.length);
 
@@ -45,31 +43,36 @@ export default function Report() {
             <ScrollView style={styles.scrollContainer}>
                 <View style={styles.DataTableWrapper}>
                     <DataTable>
-                            <DataTable.Header style={styles.DataTableHeader}>
-                                <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 2 }}>Organisation</DataTable.Title>
-                                <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 3 }}>Address</DataTable.Title>
-                                <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 2 }}>Contact</DataTable.Title>
-                                <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 2.5, right: 0, justifyContent: 'center' }}>Actions</DataTable.Title>
-                            </DataTable.Header>
+                        <DataTable.Header style={styles.DataTableHeader}>
+                            <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 2 }}>Organisation</DataTable.Title>
+                            <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 3 }}>Address</DataTable.Title>
+                            <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 2 }}>Contact</DataTable.Title>
+                            <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 2.5, right: 0, justifyContent: 'center' }}>Actions</DataTable.Title>
+                        </DataTable.Header>
 
-                            {workshops.slice(from, to).map((item) => (
-                                <DataTable.Row key={item.key} style={styles.DataTableRow}>
-                                    <DataTable.Cell textStyle={styles.cellTextStyle} style={{ flex: 2 }}>{item.orgName}</DataTable.Cell>
-                                    <DataTable.Cell textStyle={styles.cellTextStyle} style={{ flex: 3 }}>{item.address}</DataTable.Cell>
-                                    <DataTable.Cell textStyle={styles.cellTextStyle} style={{ flex: 2 }}>{item.contact}</DataTable.Cell>
-                                    <DataTable.Cell style={{ flex: 2.5, justifyContent: 'center', alignItems: 'center' }}>
-                                        <View style={styles.actionButtons}>
-                                            <TouchableOpacity
-                                                style={[styles.btn, styles.viewBtn]}
-                                                onPress={() => { }}
-                                            >
-                                                <Text style={styles.btnText}>View Report</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    </DataTable.Cell>
-                                </DataTable.Row>
-                            ))}
-                        </DataTable>
+                        {loading ? (
+                            <ActivityIndicator style={{ margin: 20 }} color="#3b82f6" />
+                        ) : workshops.slice(from, to).map((item) => (
+                            <DataTable.Row key={item.id} style={styles.DataTableRow}>
+                                <DataTable.Cell textStyle={styles.cellTextStyle} style={{ flex: 2 }}>{item.name || 'Unnamed'}</DataTable.Cell>
+                                <DataTable.Cell textStyle={styles.cellTextStyle} style={{ flex: 3 }}>{item.address || 'N/A'}</DataTable.Cell>
+                                <DataTable.Cell textStyle={styles.cellTextStyle} style={{ flex: 2 }}>{item.phone || 'N/A'}</DataTable.Cell>
+                                <DataTable.Cell style={{ flex: 2.5, justifyContent: 'center', alignItems: 'center' }}>
+                                    <View style={styles.actionButtons}>
+                                        <TouchableOpacity
+                                            style={[styles.btn, styles.viewBtn]}
+                                            onPress={() => router.push({
+                                                pathname: '/(admin)/reportDetail',
+                                                params: { id: item.id, name: item.name }
+                                            } as any)}
+                                        >
+                                            <Text style={styles.btnText}>View Detail</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </DataTable.Cell>
+                            </DataTable.Row>
+                        ))}
+                    </DataTable>
 
                     <View style={styles.paginationContainer}>
                         <DataTable.Pagination

@@ -1,5 +1,5 @@
 import React from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert, Linking } from "react-native";
 import { collection, query, where, onSnapshot, updateDoc, doc, deleteDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 
@@ -37,8 +37,31 @@ export default function ManageWorkshop() {
     const to = Math.min((page + 1) * itemsPerPage, workshops.length);
     const totalPages = Math.ceil(workshops.length / itemsPerPage);
 
-    const handleViewFiles = (orgName: string) => {
-        Alert.alert("Files", `No files uploaded yet for ${orgName}.\n\nThis feature will allow admins to view submitted documents.`);
+    const handleViewFiles = (workshop: any) => {
+        const urls = workshop.documentURLs || [];
+        if (urls.length === 0) {
+            Alert.alert("No Files", "This workshop has not uploaded any documents.");
+            return;
+        }
+
+        if (urls.length === 1) {
+            Linking.openURL(urls[0]);
+            return;
+        }
+
+        // Handle multiple files with selection buttons
+        const buttons: any[] = urls.slice(0, 2).map((url: string, idx: number) => ({
+            text: `Document ${idx + 1}`,
+            onPress: () => Linking.openURL(url)
+        }));
+        
+        buttons.push({ text: "Cancel", style: "cancel" });
+        
+        Alert.alert(
+            "Review Documents",
+            `This workshop has ${urls.length} documents. Which one would you like to inspect?`,
+            buttons
+        );
     };
 
     const handleConfirm = async (userId: string, orgName: string) => {
@@ -133,7 +156,7 @@ export default function ManageWorkshop() {
                             <View style={styles.actionRow}>
                                 <TouchableOpacity
                                     style={[styles.btn, styles.viewBtn]}
-                                    onPress={() => handleViewFiles(item.name)}
+                                    onPress={() => handleViewFiles(item)}
                                 >
                                     <Text style={styles.btnText}>📄 Files</Text>
                                 </TouchableOpacity>

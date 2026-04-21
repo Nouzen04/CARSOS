@@ -1,12 +1,12 @@
-import { router } from 'expo-router';
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-native';
-import { Text, Surface } from 'react-native-paper';
-import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { ModernCard } from '@/components/ModernCard';
-import { useEffect, useState } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db } from '../../firebase';
 import Colors from '@/constants/Colors';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Surface, Text } from 'react-native-paper';
+import { db } from '../../firebase';
 
 const SERVICES = [
   { id: '1', title: 'Flat Tyre', icon: 'tire', color: '#6366f1' },
@@ -38,6 +38,7 @@ export default function PemanduHomeScreen() {
       setLoading(false);
     }
   };
+
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -80,20 +81,20 @@ export default function PemanduHomeScreen() {
                 style={styles.bengkelContent}
                 onPress={() => router.push({ pathname: '/bengkelP', params: { id: workshop.id } } as any)}
               >
-                <Image 
-                  source={require('../../assets/images/benkel.png')} 
-                  style={styles.bengkelImage} 
-                  resizeMode="cover" 
+                <Image
+                  source={require('../../assets/images/benkel.png')}
+                  style={styles.bengkelImage}
+                  resizeMode="cover"
                 />
                 <View style={styles.bengkelDetails}>
                   <View style={styles.bengkelTitleRow}>
                     <Text variant="titleLarge" style={styles.bengkelName}>{workshop.name}</Text>
                     <View style={styles.ratingBadge}>
                       <MaterialCommunityIcons name="star" size={14} color="#f59e0b" />
-                      <Text style={styles.ratingText}>{workshop.rating || '0.0'}</Text>
+                      <Text style={styles.ratingText}>{workshop.rating || 'test'}</Text>
                     </View>
                   </View>
-                  
+
                   <View style={styles.bengkelInfoRow}>
                     <Feather name="map-pin" size={14} color="#64748b" />
                     <Text variant="bodySmall" style={styles.bengkelInfoText}>

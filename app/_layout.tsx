@@ -132,6 +132,7 @@ function RootLayoutNav() {
           <Stack.Screen name="(admin)" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
           <Stack.Screen name="signup" options={{ headerShown: false }} />
+          <Stack.Screen name="waitingVerification" options={{ headerShown: false }} />
         </Stack>
       </ThemeProvider>
     </PaperProvider>
