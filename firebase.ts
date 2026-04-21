@@ -8,7 +8,7 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDjnGpfYVxi8nJtjtFN5BoExRs_NkoJQcQ",
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
   authDomain: "carsos-d5055.firebaseapp.com",
   projectId: "carsos-d5055",
   storageBucket: "carsos-d5055.firebasestorage.app",

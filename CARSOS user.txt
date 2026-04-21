@@ -1,0 +1,20 @@
+CARSOS user
+PEMANDU
+p@gmail.com / 123456
+p2@gmail.com / 123456
+
+ADMIN
+a@gmail.com / 123456
+ 
+BENGKEL
+b@gmail.com / 123456
+b2@gmail.com / 123456
+
+
+
+what to do
+1. siapkan functional emergency
+2. bila pemandu abis rating, card noti akan hilang,ltk noti jugak apabila keje pomen dh selesai. letak dot noti merah utk alert pemandu
+3. apabila pemandu dh abis rating, report dashboard bengkel tkde perubahan
+4. semasa bengkel menerima req, ltk noti. dekat 'Active' kene letak 'map' so pomen boleh tau keberadaan pemandu.
+5. user tk leh log in jika blum sign up.

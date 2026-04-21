@@ -21,7 +21,7 @@ import RenderHTML from 'react-native-render-html';
 import { auth, db } from '../../firebase'; // Accessing configured Firestore and Auth
 
 // Configuration - USER NEEDS TO ADD THEIR GEMINI API KEY HERE
-const GEMINI_API_KEY = "AIzaSyAelDZmM1rFRW2wiQR9kG6I_s7rbd71tqQ";
+const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 interface Message {
