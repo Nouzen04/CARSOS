@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Modal, Portal, Text, TextInput, Button, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { db, auth } from '../firebase';
-import { addDoc, collection, doc, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
+import { addDoc, collection, doc, serverTimestamp, runTransaction, increment, updateDoc } from 'firebase/firestore';
 
 interface RatingModalProps {
   visible: boolean;
@@ -75,8 +75,8 @@ export const RatingModal = ({ visible, onClose, request, onSuccess }: RatingModa
         timestamp: serverTimestamp()
       });
 
-      // Part 3: Update the service request to reflect it's been rated (optional but good)
-      // await updateDoc(doc(db, 'service_requests', request.id), { rated: true });
+      // Part 3: Update the service request to reflect it's been rated
+      await updateDoc(doc(db, 'service_requests', request.id), { rated: true });
 
       Alert.alert('Success', 'Thank you for your feedback!');
       onSuccess();

@@ -7,13 +7,16 @@ import {
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   MD3DarkTheme,
   MD3LightTheme,
   PaperProvider,
   adaptNavigationTheme
 } from 'react-native-paper';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '../firebase';
+import { useRouter, useSegments } from 'expo-router';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
@@ -121,6 +124,30 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const paperTheme = colorScheme === 'dark' ? CustomPaperDarkTheme : CustomPaperLightTheme;
   const navTheme = colorScheme === 'dark' ? CustomNavDarkTheme : CustomNavLightTheme;
+  
+  const segments = useSegments();
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [initializing, setInitializing] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (initializing) setInitializing(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    if (initializing) return;
+
+    const inAuthGroup = segments[0] === '(tabs)' || segments[0] === '(bengkel)' || segments[0] === '(admin)' || segments[0] === 'waitingVerification';
+
+    if (!user && inAuthGroup) {
+      // Redirect to login if not authenticated and trying to access protected routes
+      router.replace('/login');
+    }
+  }, [user, segments, initializing]);
 
   return (
     <PaperProvider theme={paperTheme}>

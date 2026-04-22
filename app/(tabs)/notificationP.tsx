@@ -26,10 +26,12 @@ export default function NotificationScreen() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const list = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const list = snapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        .filter((notif: any) => notif.rated !== true);
       setNotifications(list);
       setLoading(false);
     }, (error) => {
@@ -148,7 +150,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1a1a1a',
     alignSelf: 'flex-start',
-    marginVertical: 20,
     marginLeft: 10,
   },
   cardContainer: {

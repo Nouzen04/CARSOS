@@ -1,7 +1,7 @@
 import { Href, router } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { TextInput, Text, useTheme, IconButton } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +15,34 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      if (auth.currentUser) {
+        setLoading(true);
+        try {
+          const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            const role = userData.role;
+            if (role === 'admin') {
+              router.replace('/menuA' as Href);
+            } else if (role === 'bengkel') {
+              router.replace(userData.verified === false ? '/waitingVerification' as Href : '/menuD' as Href);
+            } else {
+              router.replace('/menuP' as Href);
+            }
+          }
+        } catch (error) {
+          console.error("Auto-login error:", error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    checkUser();
+  }, []);
 
   const signIn = async () => {
     if (!email || !password) {
@@ -44,7 +72,9 @@ export default function LoginScreen() {
             router.replace('/menuP' as Href);
           }
         } else {
-          router.replace('/menuP' as Href);
+          // If Firestore document doesn't exist, the user hasn't completed sign up
+          await auth.signOut();
+          Alert.alert('Sign In Failed', 'Your account profile was not found. Please sign up first.');
         }
       }
     } catch (error: any) {

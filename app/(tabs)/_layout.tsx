@@ -6,6 +6,8 @@ import { Href, Tabs, router } from 'expo-router';
 import React from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { IconButton, Surface } from 'react-native-paper';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { auth, db } from '../../firebase';
 
 interface SearchBarProps {
   clicked: boolean;
@@ -35,9 +37,26 @@ const SearchBar = ({ clicked, searchPhrase, setSearchPhrase, onSearch }: SearchB
 };
 
 export default function TabLayout() {
+  const [unreadCount, setUnreadCount] = React.useState(0);
   const colorScheme = useColorScheme();
   const [searchPhrase, setSearchPhrase] = React.useState("");
   const [clicked, setClicked] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!auth.currentUser) return;
+
+    const q = query(
+      collection(db, 'service_requests'),
+      where('pemanduID', '==', auth.currentUser.uid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const unrated = snapshot.docs.filter(doc => doc.data().rated !== true);
+      setUnreadCount(unrated.length);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleSearch = (query: string) => {
     if (query.trim()) {
@@ -100,6 +119,7 @@ export default function TabLayout() {
           headerTitle: 'Inbox',
           tabBarLabel: 'Inbox',
           tabBarIcon: ({ color }) => <Feather name="mail" size={24} color={color} />,
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
         }}
       />
       <Tabs.Screen
