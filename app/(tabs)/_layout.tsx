@@ -2,10 +2,10 @@ import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Tabs, router, Href } from 'expo-router';
+import { Href, Tabs, router } from 'expo-router';
 import React from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
-import { Text, Surface, IconButton } from 'react-native-paper';
+import { IconButton, Surface } from 'react-native-paper';
 
 interface SearchBarProps {
   clicked: boolean;
@@ -16,7 +16,7 @@ interface SearchBarProps {
 
 const SearchBar = ({ clicked, searchPhrase, setSearchPhrase, onSearch }: SearchBarProps) => {
   if (!clicked) return null;
-  
+
   return (
     <Surface style={styles.searchBarSurface} elevation={1}>
       <TextInput
@@ -105,7 +105,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="sosP"
         options={{
-          headerTitle: 'Assistance',
+          headerTitle: 'Emergency',
           tabBarLabel: 'Emergency',
           tabBarIcon: ({ color }) => (
             <Surface style={styles.sosIconContainer} elevation={2}>
