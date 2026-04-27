@@ -76,7 +76,10 @@ export const RatingModal = ({ visible, onClose, request, onSuccess }: RatingModa
       });
 
       // Part 3: Update the service request to reflect it's been rated
-      await updateDoc(doc(db, 'service_requests', request.id), { rated: true });
+      await updateDoc(doc(db, 'service_requests', request.id), { 
+        rated: true,
+        rating: rating
+      });
 
       Alert.alert('Success', 'Thank you for your feedback!');
       onSuccess();

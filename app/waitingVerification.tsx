@@ -1,13 +1,12 @@
-import React from 'react';
-import { StyleSheet, View, TouchableOpacity, Image } from 'react-native';
-import { Text, Surface } from 'react-native-paper';
-import { router, Href } from 'expo-router';
+import { GradientButton } from '@/components/GradientButton';
+import Colors from '@/constants/Colors';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { auth } from '../firebase';
-import Colors from '@/constants/Colors';
+import { Href, router } from 'expo-router';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Surface, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { GradientButton } from '@/components/GradientButton';
+import { auth } from '../firebase';
 
 export default function WaitingVerification() {
   const handleLogout = async () => {
@@ -36,12 +35,12 @@ export default function WaitingVerification() {
           <View style={styles.iconContainer}>
             <MaterialCommunityIcons name="clock-check-outline" size={80} color={Colors.light.primary} />
           </View>
-          
+
           <Text variant="headlineSmall" style={styles.title}>Pending Verification</Text>
           <Text variant="bodyMedium" style={styles.description}>
-            Thank you for registering with CARSOSS! Our admin team is currently reviewing your business license and details.
+            Thank you for registering with CARSOS! Our admin team is currently reviewing your business license and details.
           </Text>
-          
+
           <View style={styles.infoBox}>
             <Feather name="info" size={18} color="#6366f1" />
             <Text style={styles.infoText}>
@@ -49,7 +48,7 @@ export default function WaitingVerification() {
             </Text>
           </View>
 
-          <GradientButton 
+          <GradientButton
             title="Refresh Status"
             onPress={() => router.replace('/login' as Href)}
             style={styles.button}

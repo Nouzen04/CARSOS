@@ -84,6 +84,10 @@ export default function infoBengkel() {
         }
 
         try {
+            // Fetch driver's phone number from their profile
+            const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+            const userData = userDoc.data();
+
             await addDoc(collection(db, 'service_requests'), {
                 pemanduID: auth.currentUser.uid,
                 bengkelID: workshopId,
@@ -91,7 +95,9 @@ export default function infoBengkel() {
                 status: 'Pending',
                 contactMethod: contactMethod,
                 timestamp: serverTimestamp(),
-                pemanduName: auth.currentUser.displayName || 'Guest Driver',
+                pemanduName: auth.currentUser.displayName || userData?.name || 'Guest Driver',
+                pemanduPhone: userData?.phone || '',
+                pemanduLocation: driverLocation, // Driver's current location
             });
             console.log("Service request created automatically via " + contactMethod);
         } catch (error) {
@@ -151,7 +157,7 @@ export default function infoBengkel() {
                     <Text style={styles.title}>{bengkelData?.name}</Text>
                     <View style={styles.ratingContainer}>
                         <Feather name="star" size={16} color="#FFD700" />
-                        <Text style={styles.ratingText}>{bengkelData?.rating || '4.8'} <Text style={styles.reviewCount}>({bengkelData?.reviews || '120'} reviews)</Text></Text>
+                        <Text style={styles.ratingText}>{bengkelData?.rating || '0.0'} <Text style={styles.reviewCount}>({bengkelData?.reviewCount || '0'} reviews)</Text></Text>
                     </View>
                 </View>
 

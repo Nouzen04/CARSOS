@@ -47,7 +47,8 @@ export default function Report() {
                             <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 2 }}>Organisation</DataTable.Title>
                             <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 3 }}>Address</DataTable.Title>
                             <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 2 }}>Contact</DataTable.Title>
-                            <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 2.5, right: 0, justifyContent: 'center' }}>Actions</DataTable.Title>
+                            <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 1.5 }}>Rating</DataTable.Title>
+                            <DataTable.Title textStyle={styles.headerTextStyle} style={{ flex: 2, right: 0, justifyContent: 'center' }}>Actions</DataTable.Title>
                         </DataTable.Header>
 
                         {loading ? (
@@ -57,7 +58,8 @@ export default function Report() {
                                 <DataTable.Cell textStyle={styles.cellTextStyle} style={{ flex: 2 }}>{item.name || 'Unnamed'}</DataTable.Cell>
                                 <DataTable.Cell textStyle={styles.cellTextStyle} style={{ flex: 3 }}>{item.address || 'N/A'}</DataTable.Cell>
                                 <DataTable.Cell textStyle={styles.cellTextStyle} style={{ flex: 2 }}>{item.phone || 'N/A'}</DataTable.Cell>
-                                <DataTable.Cell style={{ flex: 2.5, justifyContent: 'center', alignItems: 'center' }}>
+                                <DataTable.Cell textStyle={styles.cellTextStyle} style={{ flex: 1.5 }}>{item.rating?.toFixed(1) || '0.0'}</DataTable.Cell>
+                                <DataTable.Cell style={{ flex: 2, justifyContent: 'center', alignItems: 'center' }}>
                                     <View style={styles.actionButtons}>
                                         <TouchableOpacity
                                             style={[styles.btn, styles.viewBtn]}

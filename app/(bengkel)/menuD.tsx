@@ -1,15 +1,16 @@
-import { collection, doc, onSnapshot, query, updateDoc, where } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View, TouchableHighlight, TouchableOpacity } from 'react-native';
-import { Text, SegmentedButtons, IconButton, Surface, useTheme } from 'react-native-paper';
-import { auth, db } from '../../firebase';
 import { ModernCard } from '@/components/ModernCard';
-import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/Colors';
-import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import { Feather, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { collection, doc, getDoc, onSnapshot, query, updateDoc, where } from 'firebase/firestore';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { SegmentedButtons, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import MapComponent from '../../components/MapComponent';
+import { auth, db } from '../../firebase';
 
-const JobCard = ({ job, type }: { job: any, type: 'incoming' | 'waiting' }) => {
+const JobCard = ({ job, type, workshopLocation }: { job: any, type: 'incoming' | 'waiting', workshopLocation: any }) => {
     const handleStatusUpdate = async (newStatus: string) => {
         try {
             await updateDoc(doc(db, 'service_requests', job.id), {
@@ -17,6 +18,15 @@ const JobCard = ({ job, type }: { job: any, type: 'incoming' | 'waiting' }) => {
             });
         } catch (error) {
             console.error("Error updating status:", error);
+        }
+    };
+
+    const handleWhatsApp = () => {
+        if (job.pemanduPhone) {
+            const phone = job.pemanduPhone.startsWith('+') ? job.pemanduPhone : `+60${job.pemanduPhone}`;
+            Linking.openURL(`whatsapp://send?phone=${phone}&text=Hello, I am from the workshop regarding your service request.`);
+        } else {
+            Alert.alert("Error", "Pemandu phone number not found.");
         }
     };
 
@@ -45,6 +55,16 @@ const JobCard = ({ job, type }: { job: any, type: 'incoming' | 'waiting' }) => {
                     </View>
                 </View>
 
+                {job.status === 'Accepted' && job.pemanduLocation && workshopLocation && (
+                    <View style={styles.mapContainer}>
+                        <MapComponent
+                            bengkelLocation={workshopLocation}
+                            driverLocation={job.pemanduLocation}
+                            bengkelName="Your Workshop"
+                        />
+                    </View>
+                )}
+
                 <View style={styles.infoRow}>
                     <View style={styles.iconCircle}>
                         <MaterialCommunityIcons name="phone" size={20} color={Colors.light.primary} />
@@ -59,27 +79,36 @@ const JobCard = ({ job, type }: { job: any, type: 'incoming' | 'waiting' }) => {
             <View style={styles.cardFooter}>
                 {job.status === 'Pending' ? (
                     <View style={styles.actionButtons}>
-                        <TouchableOpacity 
-                            style={[styles.actionBtn, { backgroundColor: '#10b981' }]} 
+                        <TouchableOpacity
+                            style={[styles.actionBtn, { backgroundColor: '#10b981' }]}
                             onPress={() => handleStatusUpdate('Accepted')}
                         >
                             <Text style={styles.actionBtnText}>Accept</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity 
-                            style={[styles.actionBtn, { backgroundColor: '#ef4444' }]} 
+                        <TouchableOpacity
+                            style={[styles.actionBtn, { backgroundColor: '#ef4444' }]}
                             onPress={() => handleStatusUpdate('Cancelled')}
                         >
                             <Text style={styles.actionBtnText}>Decline</Text>
                         </TouchableOpacity>
                     </View>
                 ) : job.status === 'Accepted' ? (
-                    <TouchableOpacity 
-                        style={[styles.viewDetailsBtn, { backgroundColor: '#3b82f6' }]} 
-                        onPress={() => handleStatusUpdate('Completed')}
-                    >
-                        <MaterialCommunityIcons name="check-all" size={20} color="#fff" />
-                        <Text style={styles.viewDetailsText}>Complete Job</Text>
-                    </TouchableOpacity>
+                    <View style={styles.actionButtons}>
+                        <TouchableOpacity
+                            style={[styles.actionBtn, { backgroundColor: '#3b82f6', flex: 2 }]}
+                            onPress={() => handleStatusUpdate('Completed')}
+                        >
+                            <MaterialCommunityIcons name="check-all" size={20} color="#fff" />
+                            <Text style={styles.actionBtnText}>Complete Job</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.actionBtn, { backgroundColor: '#25D366', flex: 1 }]}
+                            onPress={handleWhatsApp}
+                        >
+                            <FontAwesome5 name="whatsapp" size={20} color="#ffffffff" />
+                            <Text style={styles.actionBtnText}>WhatsApp</Text>
+                        </TouchableOpacity>
+                    </View>
                 ) : (
                     <TouchableOpacity style={styles.viewDetailsBtn}>
                         <Text style={styles.viewDetailsText}>View Details & Tools</Text>
@@ -96,9 +125,21 @@ export default function BengkelHome() {
     const [activeTab, setActiveTab] = useState('incoming');
     const [requests, setRequests] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [workshopData, setWorkshopData] = useState<any>(null);
+    const prevRequestCount = useRef(0);
 
     useEffect(() => {
         if (!auth.currentUser) return;
+
+        // Fetch workshop location
+        const fetchWorkshop = async () => {
+            const docRef = doc(db, 'users', auth.currentUser!.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                setWorkshopData(docSnap.data());
+            }
+        };
+        fetchWorkshop();
 
         const q = query(
             collection(db, 'service_requests'),
@@ -106,10 +147,20 @@ export default function BengkelHome() {
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const list = snapshot.docs.map(doc => ({
+            const list: any[] = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
+
+            // Notify if new requests arrive
+            if (prevRequestCount.current > 0 && list.length > prevRequestCount.current) {
+                const newRequests = list.length - prevRequestCount.current;
+                if (list.some(r => r.status === 'Pending' && !requests.find(old => old.id === r.id))) {
+                    Alert.alert("New Request", `You have ${newRequests} new service request(s)!`);
+                }
+            }
+            prevRequestCount.current = list.length;
+
             setRequests(list);
             setLoading(false);
         });
@@ -147,14 +198,19 @@ export default function BengkelHome() {
                 {loading ? (
                     <ActivityIndicator size="large" color={Colors.light.primary} style={{ marginTop: 40 }} />
                 ) : (
-                    <ScrollView 
-                        style={styles.scrollContainer} 
+                    <ScrollView
+                        style={styles.scrollContainer}
                         showsVerticalScrollIndicator={false}
                         contentContainerStyle={{ paddingBottom: 40 }}
                     >
                         {filteredRequests.length > 0 ? (
                             filteredRequests.map(req => (
-                                <JobCard key={req.id} job={req} type={activeTab as any} />
+                                <JobCard
+                                    key={req.id}
+                                    job={req}
+                                    type={activeTab as any}
+                                    workshopLocation={workshopData?.location}
+                                />
                             ))
                         ) : (
                             <View style={styles.emptyState}>
@@ -257,6 +313,15 @@ const styles = StyleSheet.create({
     infoValue: {
         color: '#0f172a',
         fontWeight: '600',
+    },
+    mapContainer: {
+        height: 150,
+        width: '100%',
+        borderRadius: 12,
+        overflow: 'hidden',
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
     },
     cardFooter: {
         padding: 16,
