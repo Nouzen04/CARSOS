@@ -10,12 +10,13 @@ import { Href, router } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useState } from "react";
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View, Image } from "react-native";
 import { SegmentedButtons, Text, TextInput } from 'react-native-paper';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { auth, db, storage } from "../firebase";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { getCurrentLocation, toGeoPoint, getAddressFromCoords } from "../utils/mapService";
+import * as ImagePicker from 'expo-image-picker';
 
 interface Service {
   id: number;
@@ -52,6 +53,7 @@ export default function SignupScreen() {
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [selectedServices, setSelectedServices] = useState<number[]>([]);
   const [showPassword, setShowPassword] = useState(false);
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
 
   // Handlers for launching file picker
   const selectFile = async () => {
@@ -74,6 +76,25 @@ export default function SignupScreen() {
 
   const removeFile = (index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const pickProfilePicture = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to make this work!');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setProfilePicture(result.assets[0].uri);
+    }
   };
 
 
@@ -133,6 +154,22 @@ export default function SignupScreen() {
           userData.verified = false;
           if (location) {
             userData.location = toGeoPoint(location);
+          }
+
+          // Handle profile picture upload
+          if (profilePicture) {
+            setUploading(true);
+            try {
+              const response = await fetch(profilePicture);
+              const blob = await response.blob();
+              const storageRef = ref(storage, `workshop_profiles/${user.uid}.jpg`);
+              await uploadBytes(storageRef, blob);
+              userData.profilePicture = await getDownloadURL(storageRef);
+            } catch (uploadError) {
+              console.error("Error uploading profile picture:", uploadError);
+            } finally {
+              setUploading(false);
+            }
           }
 
           // Handle multi-file upload
@@ -327,6 +364,22 @@ export default function SignupScreen() {
                   numberOfLines={4}
                   style={styles.input}
                 />
+
+                <Text style={styles.sectionLabel}>Workshop Profile Picture</Text>
+                <TouchableOpacity
+                  style={styles.profilePicBtn}
+                  onPress={pickProfilePicture}
+                >
+                  {profilePicture ? (
+                    <Image source={{ uri: profilePicture }} style={styles.profilePicPreview} />
+                  ) : (
+                    <View style={styles.profilePicPlaceholder}>
+                      <Feather name="image" size={24} color={Colors.light.primary} />
+                      <Text style={styles.profilePicBtnText}>Select Workshop Picture</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+
                 <Text style={styles.sectionLabel}>Business Verification</Text>
                 <TouchableOpacity
                   style={styles.uploadBtn}
@@ -489,6 +542,32 @@ const styles = StyleSheet.create({
   filesList: {
     marginTop: 10,
     marginBottom: 10,
+  },
+  profilePicBtn: {
+    width: '100%',
+    height: 180,
+    borderRadius: 16,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderStyle: 'dashed',
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  profilePicPreview: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  profilePicPlaceholder: {
+    alignItems: 'center',
+    gap: 10,
+  },
+  profilePicBtnText: {
+    color: '#6366f1',
+    fontWeight: '600',
   },
   uploadBtn: {
     flexDirection: 'row',
