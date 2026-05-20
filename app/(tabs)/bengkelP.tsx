@@ -5,8 +5,9 @@ import * as Location from 'expo-location';
 import { router, useLocalSearchParams } from 'expo-router';
 import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Dimensions, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapComponent from '../../components/MapComponent';
+import { WorkshopImage } from '@/components/WorkshopImage';
 import { auth, db } from '../../firebase';
 import { formatDistance, getDirectionsUrl, getDistance, getGoogleMapsUrl } from '../../utils/mapService';
 
@@ -141,10 +142,11 @@ export default function infoBengkel() {
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
             {/* Header Image */}
             <View style={styles.imageContainer}>
-                <Image
-                    source={require('../../assets/images/benkel.png')}
+                <WorkshopImage
+                    profilePicture={bengkelData?.profilePicture}
+                    workshopId={workshopId}
                     style={styles.headerImage}
-                    resizeMode="contain"
+                    resizeMode="cover"
                 />
                 <TouchableOpacity style={styles.backButton} onPress={() => { router.back() }}>
                     <Feather name="arrow-left" size={24} color="white" />

@@ -3,20 +3,20 @@ import { GradientButton } from '@/components/GradientButton';
 import { ModernCard } from '@/components/ModernCard';
 import Colors from '@/constants/Colors';
 import Feather from '@expo/vector-icons/Feather';
-import * as DocumentPicker from 'expo-document-picker';
 import { Checkbox } from 'expo-checkbox';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Href, router } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { useState } from "react";
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View, Image } from "react-native";
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SegmentedButtons, Text, TextInput } from 'react-native-paper';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { auth, db, storage } from "../firebase";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { getCurrentLocation, toGeoPoint, getAddressFromCoords } from "../utils/mapService";
-import * as ImagePicker from 'expo-image-picker';
+import { getAddressFromCoords, getCurrentLocation, toGeoPoint } from "../utils/mapService";
 
 interface Service {
   id: number;
@@ -88,7 +88,6 @@ export default function SignupScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
-      aspect: [16, 9],
       quality: 0.7,
     });
 
@@ -167,6 +166,10 @@ export default function SignupScreen() {
               userData.profilePicture = await getDownloadURL(storageRef);
             } catch (uploadError) {
               console.error("Error uploading profile picture:", uploadError);
+              Alert.alert(
+                "Upload Failed",
+                "Profile picture could not be saved. Publish Storage rules (see FIRESTORE_RULES.md), then try updating your photo from the workshop profile screen."
+              );
             } finally {
               setUploading(false);
             }

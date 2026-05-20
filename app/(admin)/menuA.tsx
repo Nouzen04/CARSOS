@@ -1,22 +1,70 @@
-import { Href, router } from 'expo-router';
-import React from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View, Alert } from 'react-native';
-import { Text, IconButton, useTheme, Surface } from 'react-native-paper';
-import { auth } from '../../firebase';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { ModernCard } from '@/components/ModernCard';
 import Colors from '@/constants/Colors';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Href, router } from 'expo-router';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { IconButton, Surface, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { auth, db } from '../../firebase';
 
 export default function AdminDashboard() {
-    const stats = [
-        { id: '1', title: 'Total Users', value: '1,245', icon: 'account-group', color: '#6366f1' },
-        { id: '2', title: 'Workshops', value: '34', icon: 'tools', color: '#8b5cf6' },
-        { id: '3', title: 'Jobs Today', value: '128', icon: 'car-wrench', color: '#3b82f6' },
-        { id: '4', title: 'Pending', value: '7', icon: 'alert-circle', color: '#f59e0b' },
-    ];
+    const [stats, setStats] = useState({
+    totalUser: 0,
+    workshop: 0,
+    job: 0,
+    pending: 0,
+    });
 
+    useEffect(() => {
+        fetchStat();
+    }, []);
+
+    const fetchStat = async () =>
+    {
+        try{
+            const qUser = query(
+                collection(db,"users"),
+                where ("role", "==", "pemandu")
+            );
+            const userSnapshot = await getDocs(qUser);
+            const user = userSnapshot.docs.map(doc => doc.data());
+
+            const qWork = query(
+                collection(db, "users"),
+                where ("role", "==", "bengkel")
+            );
+            const workSnapshot = await getDocs(qWork);
+            const work = workSnapshot.docs.map(doc => doc.data());
+
+            const requestSnapshot = await getDocs(collection(db, "service_requests"));
+            const requests = requestSnapshot.docs.map(doc => doc.data());
+
+            const totalUser = user.length;
+            const workshop = work.length;
+            const job = requests.filter(
+                r => r.status === 'Completed' || r.status === 'Cancelled'
+            ).length;
+            const pending = work.filter(r => r.verified === false).length;
+
+            setStats({
+                totalUser,
+                workshop,
+                job,
+                pending,
+            });
+        }catch (error: any){
+            console.error("Error fetching stats:", error);
+            if (error?.code === 'permission-denied') {
+                Alert.alert(
+                    "Permission Denied",
+                    "Admin cannot read this workshop's data. Publish the updated Firestore rules from firestore.rules (see FIRESTORE_RULES.md)."
+                );
+            }
+        }
+    };
     const actions = [
         { id: '1', title: 'View Users', subtitle: 'Manage driver & staff accounts', icon: 'users', color: '#6366f1', onPress: () => router.push('/viewuserA' as Href) },
         { id: '2', title: 'Manage Workshops', subtitle: 'Review and verify service centers', icon: 'tool', color: '#8b5cf6', onPress: () => router.push('/manageworkshopA' as Href) },
@@ -74,15 +122,39 @@ export default function AdminDashboard() {
                 contentContainerStyle={{ paddingBottom: 40 }}
             >
                 <View style={styles.statsGrid}>
-                    {stats.map((stat) => (
-                        <ModernCard key={stat.id} style={styles.statCard} elevation={2}>
-                            <View style={[styles.statIconContainer, { backgroundColor: stat.color + '15' }]}>
-                                <MaterialCommunityIcons name={stat.icon as any} size={24} color={stat.color} />
+
+                        <ModernCard style={styles.statCard} elevation={2}>
+                            <View style={[styles.statIconContainer, { backgroundColor: '#6366f1' + '15' }]}>
+                                <MaterialCommunityIcons name= 'account-group' size={24} color= '#6366f1' />
                             </View>
-                            <Text variant="headlineMedium" style={[styles.statValue, { color: stat.color }]}>{stat.value}</Text>
-                            <Text variant="labelMedium" style={styles.statTitle}>{stat.title}</Text>
+                            <Text variant="headlineMedium" style={[styles.statValue, { color: '#6366f1' }]}>{stats.totalUser}</Text>
+                            <Text variant="labelMedium" style={styles.statTitle}>Total User</Text>
                         </ModernCard>
-                    ))}
+
+                        <ModernCard style={styles.statCard} elevation={2}>
+                            <View style={[styles.statIconContainer, { backgroundColor: '#8b5cf6' + '15' }]}>
+                                <MaterialCommunityIcons name= 'tools' size={24} color= '#8b5cf6' />
+                            </View>
+                            <Text variant="headlineMedium" style={[styles.statValue, { color: '#8b5cf6' }]}>{stats.workshop}</Text>
+                            <Text variant="labelMedium" style={styles.statTitle}>Workshop</Text>
+                        </ModernCard>
+                        
+                        <ModernCard style={styles.statCard} elevation={2}>
+                            <View style={[styles.statIconContainer, { backgroundColor: '#3b82f6' + '15' }]}>
+                                <MaterialCommunityIcons name= 'car-wrench' size={24} color= '#3b82f6' />
+                            </View>
+                            <Text variant="headlineMedium" style={[styles.statValue, { color: '#3b82f6' }]}>{stats.job}</Text>
+                            <Text variant="labelMedium" style={styles.statTitle}>Jobs</Text>
+                        </ModernCard>
+
+                        <ModernCard style={styles.statCard} elevation={2}>
+                            <View style={[styles.statIconContainer, { backgroundColor: '#f59e0b' + '15' }]}>
+                                <MaterialCommunityIcons name= 'alert-circle' size={24} color= '#f59e0b' />
+                            </View>
+                            <Text variant="headlineMedium" style={[styles.statValue, { color: '#f59e0b' }]}>{stats.pending}</Text>
+                            <Text variant="labelMedium" style={styles.statTitle}>Pending</Text>
+                        </ModernCard>
+                   
                 </View>
 
                 <View style={styles.sectionHeader}>

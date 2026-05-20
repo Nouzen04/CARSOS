@@ -1,0 +1,35 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    // Workshop profile photo: workshop_profiles/{uid}.jpg
+    match /workshop_profiles/{fileName} {
+      allow read: if signedIn();
+      allow write: if signedIn()
+        && fileName == request.auth.uid + '.jpg';
+      allow delete: if signedIn()
+        && fileName == request.auth.uid + '.jpg';
+    }
+
+    // Verification documents: workshop_docs/{uid}/{filename}
+    match /workshop_docs/{userId}/{allPaths=**} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+  }
+}

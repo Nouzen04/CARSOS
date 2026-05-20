@@ -1,15 +1,15 @@
 import { ModernCard } from "@/components/ModernCard";
 import Colors from "@/constants/Colors";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import * as Print from 'expo-print';
 import { useLocalSearchParams } from "expo-router";
+import * as Sharing from 'expo-sharing';
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Dimensions, ScrollView, StyleSheet, View, TouchableOpacity, Alert } from "react-native";
-import { Button, Divider, List, Surface, Text } from "react-native-paper";
-import { db } from "../../firebase";
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
+import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, View } from "react-native";
 import { BarChart } from "react-native-chart-kit";
+import { Button, Surface, Text } from "react-native-paper";
+import { db } from "../../firebase";
 
 export default function ReportDetail() {
     const { id, name } = useLocalSearchParams();
@@ -71,8 +71,14 @@ export default function ReportDetail() {
                 avgRating: Number(avgRating),
                 cancelled,
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error fetching stats:", error);
+            if (error?.code === 'permission-denied') {
+                Alert.alert(
+                    "Permission Denied",
+                    "Admin cannot read this workshop's data. Publish the updated Firestore rules from firestore.rules (see FIRESTORE_RULES.md)."
+                );
+            }
         } finally {
             setLoading(false);
         }

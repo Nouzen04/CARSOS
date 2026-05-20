@@ -1,7 +1,7 @@
 import { Href, router } from "expo-router";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import React from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ActivityIndicator, DataTable } from "react-native-paper";
 import { db } from "../../firebase";
 
@@ -28,8 +28,14 @@ export default function Report() {
             }));
             setWorkshops(list);
             setLoading(false);
-        }, (error) => {
+        }, (error: any) => {
             console.error("Error fetching reports:", error);
+            if (error?.code === 'permission-denied') {
+                Alert.alert(
+                    "Permission Denied",
+                    "Admin cannot list workshops. Publish the updated Firestore rules from firestore.rules (see FIRESTORE_RULES.md)."
+                );
+            }
             setLoading(false);
         });
 

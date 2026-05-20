@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userDoc().data.role == 'admin';
+    }
+
+    // Drivers list workshops; admin lists users for dashboard/reports
+    match /users/{userId} {
+      allow read: if isAdmin()
+        || (signedIn() && (request.auth.uid == userId || resource.data.role == 'bengkel'));
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow update: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Admin reportDetail reads requests for any workshop (bengkelID query)
+    match /service_requests/{requestId} {
+      allow create: if signedIn()
+        && request.resource.data.pemanduID == request.auth.uid;
+      allow read: if isAdmin() || (
+        signedIn() && (
+          resource.data.pemanduID == request.auth.uid
+          || resource.data.bengkelID == request.auth.uid
+        )
+      );
+      allow update: if signedIn() && (
+        resource.data.bengkelID == request.auth.uid
+        || resource.data.pemanduID == request.auth.uid
+        || isAdmin()
+      );
+    }
+
+    // Admin reportDetail reads ratings for any workshop (bengkelID query)
+    match /ratings/{ratingId} {
+      allow create: if signedIn();
+      allow read: if isAdmin() || signedIn();
+    }
+
+    match /ai_queries/{docId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow read: if signedIn() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+    }
+
+    match /ai_feedback/{docId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow read: if signedIn() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+    }
+  }
+}

@@ -1,10 +1,11 @@
 import { ModernCard } from '@/components/ModernCard';
+import { WorkshopImage } from '@/components/WorkshopImage';
 import Colors from '@/constants/Colors';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Surface, Text } from 'react-native-paper';
 import { db } from '../../firebase';
 
@@ -66,9 +67,6 @@ export default function PemanduHomeScreen() {
 
         <View style={styles.sectionHeader}>
           <Text variant="titleLarge" style={styles.sectionTitle}>Nearby Workshops</Text>
-          <TouchableOpacity>
-            <Text variant="labelLarge" style={{ color: Colors.light.primary }}>See All</Text>
-          </TouchableOpacity>
         </View>
 
         {loading ? (
@@ -81,8 +79,9 @@ export default function PemanduHomeScreen() {
                 style={styles.bengkelContent}
                 onPress={() => router.push({ pathname: '/bengkelP', params: { id: workshop.id } } as any)}
               >
-                <Image
-                  source={require('../../assets/images/benkel.png')}
+                <WorkshopImage
+                  profilePicture={workshop.profilePicture}
+                  workshopId={workshop.id}
                   style={styles.bengkelImage}
                   resizeMode="cover"
                 />
@@ -91,7 +90,7 @@ export default function PemanduHomeScreen() {
                     <Text variant="titleLarge" style={styles.bengkelName}>{workshop.name}</Text>
                     <View style={styles.ratingBadge}>
                       <MaterialCommunityIcons name="star" size={14} color="#f59e0b" />
-                      <Text style={styles.ratingText}>{workshop.rating || 'test'}</Text>
+                      <Text style={styles.ratingText}>{workshop.rating ?? '0.0'}</Text>
                     </View>
                   </View>
 
@@ -102,13 +101,13 @@ export default function PemanduHomeScreen() {
                     </Text>
                   </View>
 
-                  <View style={styles.tagGrid}>
+                  {/* <View style={styles.tagGrid}>
                     {(workshop.selectedServices || ['General Service']).map((tag: string) => (
                       <View key={tag} style={styles.tag}>
                         <Text style={styles.tagText}>{tag}</Text>
                       </View>
                     ))}
-                  </View>
+                  </View> */}
                 </View>
               </TouchableOpacity>
             </ModernCard>

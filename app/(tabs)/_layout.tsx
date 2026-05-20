@@ -51,8 +51,11 @@ export default function TabLayout() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const unrated = snapshot.docs.filter(doc => doc.data().rated !== true);
-      setUnreadCount(unrated.length);
+      const unread = snapshot.docs.filter(doc => {
+        const data = doc.data();
+        return !data.dismissedByPemandu && !data.readByPemandu;
+      });
+      setUnreadCount(unread.length);
     });
 
     return () => unsubscribe();

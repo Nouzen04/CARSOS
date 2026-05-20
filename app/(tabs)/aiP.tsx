@@ -1,6 +1,6 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import Groq from 'groq-sdk';
 import { marked } from 'marked';
 import { useRef, useState } from 'react';
 import {
@@ -20,9 +20,9 @@ import {
 import RenderHTML from 'react-native-render-html';
 import { auth, db } from '../../firebase'; // Accessing configured Firestore and Auth
 
-// Configuration - USER NEEDS TO ADD THEIR GEMINI API KEY HERE
-const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+// Configuration - USER NEEDS TO ADD THEIR GROQ API KEY HERE
+const GROQ_API_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY || "";
+const groq = new Groq({ apiKey: GROQ_API_KEY });
 
 interface Message {
     id: string;
@@ -56,31 +56,34 @@ export default function AIChatScreen() {
     const SYSTEM_INSTRUCTION =
         "You are a professional car breakdown analyst and safety assistant for the 'CARSOS' emergency app. " +
         "Safety first. If a user describes a breakdown, your first response must prioritize their safety (pull over, hazard lights, etc.). " +
-        "Then, provide a professional analysis of the symptoms. Finally, give a clear procedure to follow. Make it simple as possible so that driver can understand and follow the instructions. " +
+        "Then, provide a professional analysis of the symptoms. Finally, give a simple yet detailed procedure to follow. Dont give it too lengthy and confusing, keep it simple and easy to understand. "+
         "If the issue is critical (brake failure, fire), strongly advise calling for a professional tow. " +
         "Please format your responses using Markdown (e.g., bullet points, bold text) to make it easy to read.";
 
     const sendMessageToAI = async (text: string) => {
-        try {
-            const model = genAI.getGenerativeModel({
-                model: "gemini-1.5-flash",
-                systemInstruction: SYSTEM_INSTRUCTION
-            });
+        if (!GROQ_API_KEY) {
+            return "AI is not configured. Add EXPO_PUBLIC_GROQ_API_KEY to your .env file and restart the app.";
+        }
 
+        try {
             const history = messages
                 .filter(m => m.id !== '1')
                 .map(m => ({
-                    role: m.sender === 'ai' ? 'model' : 'user',
-                    parts: [{ text: m.text }],
+                    role: (m.sender === 'ai' ? 'assistant' : 'user') as 'assistant' | 'user',
+                    content: m.text,
                 }));
 
-            const chat = model.startChat({
-                history: history,
+            const completion = await groq.chat.completions.create({
+                model: 'llama-3.3-70b-versatile',
+                messages: [
+                    { role: 'system', content: SYSTEM_INSTRUCTION },
+                    ...history,
+                    { role: 'user', content: text },
+                ],
             });
 
-            const result = await chat.sendMessage(text);
-            const response = await result.response;
-            return response.text();
+            return completion.choices[0]?.message?.content?.trim()
+                || "I'm sorry, I couldn't generate a response. If it's an emergency, please use our SOS feature.";
         } catch (error) {
             console.error("AI Error:", error);
             return "I'm sorry, I'm having trouble analyzing your issue right now. If it's an emergency, please use our SOS feature.";
@@ -114,23 +117,32 @@ export default function AIChatScreen() {
         setMessages((prev) => [...prev, aiMessage]);
         setIsLoading(false);
 
-        // Save message to database for logging
-        try {
-            await addDoc(collection(db, 'ai_queries'), {
-                userId: auth.currentUser?.uid || 'anonymous',
-                userQuery: messageContent,
-                aiResponse: aiResponseText,
-                timestamp: serverTimestamp(),
-            });
-        } catch (e) {
-            console.log("Database logging failed", e);
+        // Save message to database for logging (requires Firestore rules + signed-in user)
+        const uid = auth.currentUser?.uid;
+        if (uid) {
+            try {
+                await addDoc(collection(db, 'ai_queries'), {
+                    userId: uid,
+                    userQuery: messageContent,
+                    aiResponse: aiResponseText,
+                    timestamp: serverTimestamp(),
+                });
+            } catch (e) {
+                console.log("Database logging failed", e);
+            }
         }
     };
 
     const submitFeedback = async (messageId: string, isPositive: boolean) => {
+        const uid = auth.currentUser?.uid;
+        if (!uid) {
+            Alert.alert("Login Required", "Please sign in to submit feedback.");
+            return;
+        }
+
         try {
             await addDoc(collection(db, 'ai_feedback'), {
-                userId: auth.currentUser?.uid || 'anonymous',
+                userId: uid,
                 messageId,
                 isPositive,
                 timestamp: serverTimestamp(),
