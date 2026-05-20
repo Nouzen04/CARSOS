@@ -53,18 +53,32 @@ export default function AIChatScreen() {
     const flatListRef = useRef<FlatList>(null);
     const { width } = useWindowDimensions();
 
-    // System Instruction to make the AI a Car Expert
     const SYSTEM_INSTRUCTION =
         "You are a professional car breakdown analyst and safety assistant for the 'CARSOS' emergency app. " +
         "Safety first. If a user describes a breakdown, your first response must prioritize their safety (pull over, hazard lights, etc.). " +
         "Then, provide a professional analysis of the symptoms. Finally, give a clear procedure to follow. Make it simple as possible so that driver can understand and follow the instructions. " +
-        "If the issue is critical (brake failure, fire), strongly advise calling for a professional tow .";
+        "If the issue is critical (brake failure, fire), strongly advise calling for a professional tow. " +
+        "Please format your responses using Markdown (e.g., bullet points, bold text) to make it easy to read.";
 
     const sendMessageToAI = async (text: string) => {
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
-            const prompt = `${SYSTEM_INSTRUCTION}\n\nUser Issue: ${text}\n\nResponse:`;
-            const result = await model.generateContent(prompt);
+            const model = genAI.getGenerativeModel({
+                model: "gemini-1.5-flash",
+                systemInstruction: SYSTEM_INSTRUCTION
+            });
+
+            const history = messages
+                .filter(m => m.id !== '1')
+                .map(m => ({
+                    role: m.sender === 'ai' ? 'model' : 'user',
+                    parts: [{ text: m.text }],
+                }));
+
+            const chat = model.startChat({
+                history: history,
+            });
+
+            const result = await chat.sendMessage(text);
             const response = await result.response;
             return response.text();
         } catch (error) {

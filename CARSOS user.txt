@@ -2,6 +2,26 @@ CARSOS user
 PEMANDU
 p@gmail.com / 123456
 p2@gmail.com / 123456
+driver1@test.com
+driver2@test.com
+driver3@test.com
+driver4@test.com
+driver5@test.com
+driver6@test.com
+driver7@test.com
+driver8@test.com
+driver9@test.com
+driver10@test.com
+driver11@test.com
+driver12@test.com
+driver13@test.com
+driver14@test.com
+driver15@test.com
+driver16@test.com
+driver17@test.com
+driver18@test.com
+driver19@test.com
+driver20@test.com
 
 ADMIN
 a@gmail.com / 123456
@@ -9,12 +29,31 @@ a@gmail.com / 123456
 BENGKEL
 b@gmail.com / 123456
 b2@gmail.com / 123456
+bengkel1@test.com / 123456
+bengkel2@test.com / 123456
+bengkel3@test.com  / 123456
+bengkel4@test.com / 123456
+bengkel5@test.com / 123456
+bengkel6@test.com / 123456
+bengkel7@test.com / 123456
+bengkel8@test.com / 123456
+bengkel9@test.com / 123456
+bengkel10@test.com / 123456
+
+
+recap
+Great! Now that the profile features and security rules are in place, your workshops can fully brand themselves and drivers will see a much more professional interface.
+
+To recap, we've:
+
+Added Workshop Branding: Profile picture uploads and editable business descriptions.
+Polished the UI: Added KeyboardAvoidingView to the profile and fixed consistent layout issues.
+Hardened Security: Implemented smart Storage rules to protect business documents.
+Fixed Bugs: Resolved the Image import error and the Firebase persistence crash.
+What's next on your list? Would you like to work on the Admin dashboard (to verify those workshops), or perhaps refine the AI assistant in aiP.tsx?
 
 
 
-what to do
-1. siapkan functional emergency
-2. bila pemandu abis rating, card noti akan hilang,ltk noti jugak apabila keje pomen dh selesai. letak dot noti merah utk alert pemandu
-3. apabila pemandu dh abis rating, report dashboard bengkel tkde perubahan
-4. semasa bengkel menerima req, ltk noti. dekat 'Active' kene letak 'map' so pomen boleh tau keberadaan pemandu.
-5. user tk leh log in jika blum sign up.
+log: 14/5, 5:07 p.m
+
+user cant submit review because the star that suppose to rate workshop it's not there.
