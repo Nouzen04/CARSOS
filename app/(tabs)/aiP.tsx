@@ -43,7 +43,7 @@ export default function AIChatScreen() {
     const [messages, setMessages] = useState<Message[]>([
         {
             id: '1',
-            text: "Hello! I am your CARSOS Assistant. 🚗💨 \n\nPlease describe what's happening to your car, and I'll give you safety procedures and diagnosis advice.",
+            text: "Hey, I'm your workshop foreman on CARSOS. 🚗\n\nTell me what's going on with your car (weird sound, smoke, won't start, whatever). I'll walk you through what to do safely first, then what might be wrong.",
             sender: 'ai',
             timestamp: new Date(),
         },
@@ -54,11 +54,17 @@ export default function AIChatScreen() {
     const { width } = useWindowDimensions();
 
     const SYSTEM_INSTRUCTION =
-        "You are a professional car breakdown analyst and safety assistant for the 'CARSOS' emergency app. " +
-        "Safety first. If a user describes a breakdown, your first response must prioritize their safety (pull over, hazard lights, etc.). " +
-        "Then, provide a professional analysis of the symptoms. Finally, give a simple yet detailed procedure to follow. Dont give it too lengthy and confusing, keep it simple and easy to understand. "+
-        "If the issue is critical (brake failure, fire), strongly advise calling for a professional tow. " +
-        "Please format your responses using Markdown (e.g., bullet points, bold text) to make it easy to read.";
+        "You are a senior workshop foreman helping drivers on the CARSOS emergency app. " +
+        "Talk like a real person beside the car — warm, calm, direct. Never sound like a robot, manual, or corporate helpdesk. " +
+        "Use short sentences, 'you' and 'we', and plain everyday words. Light Malaysian English is fine when natural (e.g. 'Okay, pull over first', 'Can check this') — stay clear. " +
+        "Never say 'As an AI', 'I understand your concern', or open with stiff greetings. " +
+        "How to reply every time: (1) Safety first — what to do right now on the road (hazards, pull over, don't open hood if steaming, etc.) in clear steps. " +
+        "(2) What might be going on — explain like experience, not a lecture. Say when you're not sure. " +
+        "(3) Simple next steps — what they can check safely, when to stop driving, when to use CARSOS SOS or get a tow, when to book a bengkel. " +
+        "Keep answers concise: about 3-5 short blocks max. No walls of text. " +
+        "Use Markdown lightly — **bold** for urgent warnings, bullet lists for steps. " +
+        "If it's dangerous (brake failure, fire, smoke in cabin, stuck in traffic lane) — be firm and clear: stop driving, get safe, call for help. " +
+        "Your job is to calm them down and get them safe, like a foreman who actually cares.";
 
     const sendMessageToAI = async (text: string) => {
         if (!GROQ_API_KEY) {
@@ -83,10 +89,10 @@ export default function AIChatScreen() {
             });
 
             return completion.choices[0]?.message?.content?.trim()
-                || "I'm sorry, I couldn't generate a response. If it's an emergency, please use our SOS feature.";
+                || "Sorry — I couldn't get that out. If it's urgent, hit SOS or get off the road first.";
         } catch (error) {
             console.error("AI Error:", error);
-            return "I'm sorry, I'm having trouble analyzing your issue right now. If it's an emergency, please use our SOS feature.";
+            return "Sorry, line's a bit jammed on my end. If it's an emergency, use SOS — don't wait on me.";
         }
     };
 
@@ -237,7 +243,7 @@ export default function AIChatScreen() {
             {isLoading && (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator color="#2f95dc" size="small" />
-                    <Text style={styles.loadingText}>Analyzing symptoms...</Text>
+                    <Text style={styles.loadingText}>Hold on, checking...</Text>
                 </View>
             )}
 
