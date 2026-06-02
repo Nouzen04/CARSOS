@@ -59,7 +59,7 @@ export default function SignupScreen() {
   const selectFile = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*', 
+        type: '*/*',
         multiple: true,
         copyToCacheDirectory: true,
       });
@@ -129,7 +129,6 @@ export default function SignupScreen() {
       Alert.alert("Error", "Please fill in all required fields.");
       return;
     }
-
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
@@ -143,7 +142,6 @@ export default function SignupScreen() {
           role: role,
           createdAt: new Date().toISOString(),
         };
-
         if (role === 'bengkel') {
           userData.name = workshopName;
           userData.address = address;
@@ -154,7 +152,6 @@ export default function SignupScreen() {
           if (location) {
             userData.location = toGeoPoint(location);
           }
-
           // Handle profile picture upload
           if (profilePicture) {
             setUploading(true);
@@ -174,7 +171,6 @@ export default function SignupScreen() {
               setUploading(false);
             }
           }
-
           // Handle multi-file upload
           if (selectedFiles.length > 0) {
             setUploading(true);
@@ -201,8 +197,8 @@ export default function SignupScreen() {
 
         if (role === 'bengkel') {
           router.replace('/waitingVerification' as Href);
-        } else if (role === 'admin') {
-          router.replace('/menuA' as Href);
+          // } else if (role === 'admin') {
+          //   router.replace('/menuA' as Href);
         } else {
           router.replace('/menuP' as Href);
         }
@@ -237,7 +233,7 @@ export default function SignupScreen() {
               buttons={[
                 { value: 'pemandu', label: 'Driver', icon: 'car' },
                 { value: 'bengkel', label: 'Workshop', icon: 'tools' },
-                { value: 'admin', label: 'Admin', icon: 'shield-account' },
+                // { value: 'admin', label: 'Admin', icon: 'shield-account' },
               ]}
               style={styles.segmentedButtons}
               theme={{ colors: { secondaryContainer: Colors.light.primary + '20', onSecondaryContainer: Colors.light.primary } }}
@@ -413,9 +409,9 @@ export default function SignupScreen() {
               </View>
             )}
 
-            <GradientButton 
-              title="Create Account" 
-              onPress={signUp} 
+            <GradientButton
+              title="Create Account"
+              onPress={signUp}
               style={styles.button}
               loading={uploading}
             />

@@ -1,7 +1,8 @@
 import React from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert, Linking } from "react-native";
-import { collection, query, where, onSnapshot, updateDoc, doc, deleteDoc } from "firebase/firestore";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert, Linking, Modal, TextInput } from "react-native";
+import { collection, query, where, onSnapshot, updateDoc, doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase";
+import { sendPushNotification } from "../../utils/notificationService";
 
 export default function ManageWorkshop() {
     const [page, setPage] = React.useState<number>(0);
@@ -9,6 +10,11 @@ export default function ManageWorkshop() {
 
     const [workshops, setWorkshops] = React.useState<any[]>([]);
     const [loading, setLoading] = React.useState(true);
+
+    const [rejectModalVisible, setRejectModalVisible] = React.useState(false);
+    const [rejectionReason, setRejectionReason] = React.useState("");
+    const [selectedWorkshopId, setSelectedWorkshopId] = React.useState<string | null>(null);
+    const [selectedWorkshopName, setSelectedWorkshopName] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         // Listen to all bengkel users that are NOT yet verified
@@ -23,7 +29,9 @@ export default function ManageWorkshop() {
                 id: d.id,
                 ...d.data()
             }));
-            setWorkshops(list);
+            // Filter out workshops that have been rejected so they don't clutter the pending screen
+            const pendingList = list.filter((w: any) => w.status !== 'rejected');
+            setWorkshops(pendingList);
             setLoading(false);
         }, (error) => {
             console.error("Error fetching workshops:", error);
@@ -66,37 +74,71 @@ export default function ManageWorkshop() {
 
     const handleConfirm = async (userId: string, orgName: string) => {
         try {
-            await updateDoc(doc(db, "users", userId), {
+            const userRef = doc(db, "users", userId);
+            const userSnap = await getDoc(userRef);
+            const expoPushToken = userSnap.exists() ? userSnap.data().expoPushToken : null;
+
+            await updateDoc(userRef, {
                 verified: true
             });
             Alert.alert("✅ Verified", `${orgName} has been verified and confirmed!`);
+
+            if (expoPushToken) {
+                await sendPushNotification(
+                    expoPushToken,
+                    "CARSOS Account Approved 🎉",
+                    `Congratulations! ${orgName} has been verified and confirmed by the admin team.`,
+                    { verified: true }
+                );
+            }
         } catch (error) {
             console.error("Error confirming workshop:", error);
             Alert.alert("Error", "Failed to verify workshop. Please try again.");
         }
     };
 
-    const handleReject = async (userId: string, orgName: string) => {
-        Alert.alert(
-            "Reject Workshop",
-            `Are you sure you want to reject ${orgName}? This will delete their account.`,
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Reject",
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            await deleteDoc(doc(db, "users", userId));
-                            Alert.alert("Rejected", `${orgName} has been rejected and removed.`);
-                        } catch (error) {
-                            console.error("Error rejecting workshop:", error);
-                            Alert.alert("Error", "Failed to reject workshop.");
-                        }
-                    }
-                }
-            ]
-        );
+    const handleReject = (userId: string, orgName: string) => {
+        setSelectedWorkshopId(userId);
+        setSelectedWorkshopName(orgName);
+        setRejectionReason("");
+        setRejectModalVisible(true);
+    };
+
+    const submitRejection = async () => {
+        if (!selectedWorkshopId) return;
+        if (!rejectionReason.trim()) {
+            Alert.alert("Feedback Required", "Please enter a reason/message so the workshop knows how to improve.");
+            return;
+        }
+
+        try {
+            const userRef = doc(db, "users", selectedWorkshopId);
+            const userSnap = await getDoc(userRef);
+            const expoPushToken = userSnap.exists() ? userSnap.data().expoPushToken : null;
+
+            await updateDoc(userRef, {
+                verified: false,
+                status: 'rejected',
+                rejectionMessage: rejectionReason.trim()
+            });
+            Alert.alert("Rejected", `${selectedWorkshopName} has been rejected with feedback.`);
+            setRejectModalVisible(false);
+            setSelectedWorkshopId(null);
+            setSelectedWorkshopName(null);
+            setRejectionReason("");
+
+            if (expoPushToken) {
+                await sendPushNotification(
+                    expoPushToken,
+                    "CARSOS Registration Update ⚠️",
+                    `Your registration was rejected. Feedback: "${rejectionReason.trim()}"`,
+                    { status: 'rejected', rejectionMessage: rejectionReason.trim() }
+                );
+            }
+        } catch (error) {
+            console.error("Error rejecting workshop:", error);
+            Alert.alert("Error", "Failed to reject workshop. Please try again.");
+        }
     };
 
     const paginated = workshops.slice(from, to);
@@ -205,6 +247,55 @@ export default function ManageWorkshop() {
                 )}
 
             </ScrollView>
+
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={rejectModalVisible}
+                onRequestClose={() => {
+                    setRejectModalVisible(false);
+                    setSelectedWorkshopId(null);
+                    setSelectedWorkshopName(null);
+                    setRejectionReason("");
+                }}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Reject Registration</Text>
+                        <Text style={styles.modalSubtitle}>
+                            Provide feedback to {selectedWorkshopName || 'the workshop'} on how to improve their submission:
+                        </Text>
+                        <TextInput
+                            style={styles.modalInput}
+                            placeholder="e.g. Business license file is blurred, please re-upload a clear document."
+                            placeholderTextColor="#94a3b8"
+                            multiline
+                            numberOfLines={4}
+                            value={rejectionReason}
+                            onChangeText={setRejectionReason}
+                        />
+                        <View style={styles.modalActionRow}>
+                            <TouchableOpacity
+                                style={[styles.modalBtn, styles.modalCancelBtn]}
+                                onPress={() => {
+                                    setRejectModalVisible(false);
+                                    setSelectedWorkshopId(null);
+                                    setSelectedWorkshopName(null);
+                                    setRejectionReason("");
+                                }}
+                            >
+                                <Text style={styles.modalCancelBtnText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalBtn, styles.modalSubmitBtn]}
+                                onPress={submitRejection}
+                            >
+                                <Text style={styles.modalSubmitBtnText}>Submit Reject</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -358,5 +449,76 @@ const styles = StyleSheet.create({
     emptyText: {
         color: '#94a3b8',
         fontSize: 16,
+    },
+
+    // Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    modalContent: {
+        backgroundColor: '#ffffff',
+        width: '100%',
+        maxWidth: 400,
+        borderRadius: 16,
+        padding: 20,
+        elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1e293b',
+        marginBottom: 8,
+    },
+    modalSubtitle: {
+        fontSize: 14,
+        color: '#64748b',
+        lineHeight: 20,
+        marginBottom: 16,
+    },
+    modalInput: {
+        borderWidth: 1,
+        borderColor: '#cbd5e1',
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 14,
+        color: '#334155',
+        textAlignVertical: 'top',
+        height: 100,
+        marginBottom: 20,
+    },
+    modalActionRow: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    modalBtn: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalCancelBtn: {
+        backgroundColor: '#f1f5f9',
+    },
+    modalCancelBtnText: {
+        color: '#64748b',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    modalSubmitBtn: {
+        backgroundColor: '#ef4444',
+    },
+    modalSubmitBtnText: {
+        color: '#ffffff',
+        fontSize: 14,
+        fontWeight: '600',
     },
 });

@@ -1,15 +1,15 @@
+import { GradientButton } from '@/components/GradientButton';
+import { ModernCard } from '@/components/ModernCard';
+import Colors from '@/constants/Colors';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Href, router } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { TextInput, Text, useTheme, IconButton } from 'react-native-paper';
+import { Text, TextInput } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { auth, db } from '../firebase';
-import { ModernCard } from '@/components/ModernCard';
-import { GradientButton } from '@/components/GradientButton';
-import Colors from '@/constants/Colors';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -125,10 +125,10 @@ export default function LoginScreen() {
             style={styles.input}
             left={<TextInput.Icon icon="lock-outline" color={Colors.light.primary} />}
             right={
-              <TextInput.Icon 
-                icon={showPassword ? "eye-off" : "eye"} 
+              <TextInput.Icon
+                icon={showPassword ? "eye-off" : "eye"}
                 onPress={() => setShowPassword(!showPassword)}
-                color={Colors.light.primary} 
+                color={Colors.light.primary}
               />
             }
           />
@@ -139,9 +139,9 @@ export default function LoginScreen() {
             </Text>
           </TouchableOpacity>
 
-          <GradientButton 
-            title="Log In" 
-            onPress={signIn} 
+          <GradientButton
+            title="Log In"
+            onPress={signIn}
             style={styles.button}
           />
 

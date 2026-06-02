@@ -24,12 +24,12 @@ export async function getCurrentLocation(): Promise<Coords | null> {
     };
 }
 
-/** Convert a Coords object to a Firestore GeoPoint for storage */
+/** Tukarkan koordinat kepada firestore geopoint */
 export function toGeoPoint(coords: Coords): GeoPoint {
     return new GeoPoint(coords.latitude, coords.longitude);
 }
 
-/** Convert coordinates to a human-readable address string */
+/** Tukarkan koordinat kepada alamat */
 export async function getAddressFromCoords(coords: Coords): Promise<string> {
     try {
         const address = await Location.reverseGeocodeAsync({
@@ -42,7 +42,7 @@ export async function getAddressFromCoords(coords: Coords): Promise<string> {
             const street = item.street || item.name || "";
             const city = item.city || item.district || "";
             const region = item.region || "";
-            
+
             return `${street}${street ? ", " : ""}${city}${city ? ", " : ""}${region}`.trim() || "Address not found";
         }
         return "Address not found";
@@ -61,8 +61,7 @@ export function fromGeoPoint(geoPoint: { latitude: number; longitude: number }):
 }
 
 /**
- * Calculate distance between two coordinates using the Haversine formula.
- * Returns distance in kilometres — no external API needed.
+ * Kira jarak antara 2 kordinat gunakan haversine formula
  */
 export function getDistance(from: Coords, to: Coords): number {
     const R = 6371; // Earth radius in km
@@ -77,7 +76,6 @@ export function getDistance(from: Coords, to: Coords): number {
     return parseFloat((R * c).toFixed(1));
 }
 
-/** Format a distance number nicely, e.g. "1.2 km" or "800 m" */
 export function formatDistance(km: number): string {
     if (km < 1) return `${Math.round(km * 1000)} m`;
     return `${km} km`;

@@ -19,6 +19,7 @@ import { auth } from '../firebase';
 import { useRouter, useSegments } from 'expo-router';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { registerForPushNotificationsAsync } from '../utils/notificationService';
 import Colors from '@/constants/Colors';
 
 const { LightTheme: NavLightTheme, DarkTheme: NavDarkTheme } = adaptNavigationTheme({
@@ -137,6 +138,14 @@ function RootLayoutNav() {
     });
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      registerForPushNotificationsAsync(user.uid).catch((err) => {
+        console.error("Failed to register push token:", err);
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     if (initializing) return;
