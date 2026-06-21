@@ -19,6 +19,7 @@ const SERVICES = [
 export default function PemanduHomeScreen() {
   const [workshops, setWorkshops] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchWorkshops();
@@ -40,6 +41,36 @@ export default function PemanduHomeScreen() {
     }
   };
 
+  const handleServicePress = (serviceId: string) => {
+    if (selectedServiceId === serviceId) {
+      setSelectedServiceId(null);
+    } else {
+      setSelectedServiceId(serviceId);
+    }
+  };
+
+  const filteredWorkshops = workshops.filter((workshop) => {
+    if (!selectedServiceId) return true;
+    
+    // Mapping:
+    // id '1' (Flat Tyre) -> selectedServices includes 2 (Tire Change)
+    // id '2' (Towing) -> selectedServices includes 1 (Full Service) (Towing isn't in signup list)
+    // id '3' (Battery) -> selectedServices includes 1 (Full Service) or 4 (Engine Tune)
+    // id '4' (Engine) -> selectedServices includes 4 (Engine Tune)
+    if (selectedServiceId === '1') {
+      return workshop.selectedServices?.includes(2);
+    }
+    if (selectedServiceId === '2') {
+      return workshop.selectedServices?.includes(1);
+    }
+    if (selectedServiceId === '3') {
+      return workshop.selectedServices?.includes(1) || workshop.selectedServices?.includes(4);
+    }
+    if (selectedServiceId === '4') {
+      return workshop.selectedServices?.includes(4);
+    }
+    return true;
+  });
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -50,29 +81,55 @@ export default function PemanduHomeScreen() {
         </View>
 
         <View style={styles.serviceGrid}>
-          {SERVICES.map((service) => (
-            <TouchableOpacity
-              key={service.id}
-              activeOpacity={0.7}
-              onPress={() => console.log(`${service.title} clicked!`)}
-              style={styles.serviceItem}
-            >
-              <Surface style={styles.serviceIconContainer} elevation={1}>
-                <MaterialCommunityIcons name={service.icon as any} size={28} color={service.color} />
-              </Surface>
-              <Text variant="labelMedium" style={styles.serviceLabel}>{service.title}</Text>
-            </TouchableOpacity>
-          ))}
+          {SERVICES.map((service) => {
+            const isSelected = selectedServiceId === service.id;
+            return (
+              <TouchableOpacity
+                key={service.id}
+                activeOpacity={0.7}
+                onPress={() => handleServicePress(service.id)}
+                style={styles.serviceItem}
+              >
+                <Surface 
+                  style={[
+                    styles.serviceIconContainer,
+                    isSelected && { 
+                      backgroundColor: service.color + '15', 
+                      borderWidth: 2, 
+                      borderColor: service.color,
+                      transform: [{ scale: 1.05 }]
+                    }
+                  ]} 
+                  elevation={isSelected ? 0 : 1}
+                >
+                  <MaterialCommunityIcons name={service.icon as any} size={28} color={service.color} />
+                </Surface>
+                <Text 
+                  variant="labelMedium" 
+                  style={[
+                    styles.serviceLabel, 
+                    isSelected && { color: service.color, fontWeight: 'bold' }
+                  ]}
+                >
+                  {service.title}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text variant="titleLarge" style={styles.sectionTitle}>Nearby Workshops</Text>
+          <Text variant="titleLarge" style={styles.sectionTitle}>
+            {selectedServiceId 
+              ? `Nearby for ${SERVICES.find(s => s.id === selectedServiceId)?.title}` 
+              : 'Nearby Workshops'}
+          </Text>
         </View>
 
         {loading ? (
           <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 20 }} />
-        ) : workshops.length > 0 ? (
-          workshops.map((workshop) => (
+        ) : filteredWorkshops.length > 0 ? (
+          filteredWorkshops.map((workshop) => (
             <ModernCard key={workshop.id} style={styles.bengkelCard} elevation={2}>
               <TouchableOpacity
                 activeOpacity={0.9}
@@ -100,21 +157,13 @@ export default function PemanduHomeScreen() {
                       {workshop.address || 'Address not available'}
                     </Text>
                   </View>
-
-                  {/* <View style={styles.tagGrid}>
-                    {(workshop.selectedServices || ['General Service']).map((tag: string) => (
-                      <View key={tag} style={styles.tag}>
-                        <Text style={styles.tagText}>{tag}</Text>
-                      </View>
-                    ))}
-                  </View> */}
                 </View>
               </TouchableOpacity>
             </ModernCard>
           ))
         ) : (
           <View style={styles.emptyState}>
-            <Text>No workshops found nearby.</Text>
+            <Text style={{ color: '#64748b', fontSize: 15 }}>No workshops found matching this service.</Text>
           </View>
         )}
       </View>

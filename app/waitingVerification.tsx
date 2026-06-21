@@ -7,7 +7,7 @@ import { Href, router } from 'expo-router';
 import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, TouchableOpacity, View, Alert, ScrollView } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Surface, Text, TextInput } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { auth, db, storage } from '../firebase';
@@ -222,7 +222,7 @@ export default function WaitingVerification() {
             )}
 
             <GradientButton
-              title="Re-submit Application"
+              title="Submit Application"
               onPress={handleResubmit}
               style={styles.button}
               loading={submitting}

@@ -3,7 +3,7 @@ import Colors from '@/constants/Colors';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Href, router } from 'expo-router';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { IconButton, Surface, Text } from 'react-native-paper';
@@ -19,52 +19,47 @@ export default function AdminDashboard() {
     });
 
     useEffect(() => {
-        fetchStat();
-    }, []);
+        const unsubscribeUsers = onSnapshot(collection(db, "users"), (userSnapshot) => {
+            const allUsers = userSnapshot.docs.map(doc => doc.data());
+            const drivers = allUsers.filter(u => u.role === 'pemandu');
+            const work = allUsers.filter(u => u.role === 'bengkel');
+            const pending = work.filter(r => r.verified === false && r.status !== 'rejected').length;
 
-    const fetchStat = async () =>
-    {
-        try{
-            const qUser = query(
-                collection(db,"users"),
-                where ("role", "==", "pemandu")
-            );
-            const userSnapshot = await getDocs(qUser);
-            const user = userSnapshot.docs.map(doc => doc.data());
-
-            const qWork = query(
-                collection(db, "users"),
-                where ("role", "==", "bengkel")
-            );
-            const workSnapshot = await getDocs(qWork);
-            const work = workSnapshot.docs.map(doc => doc.data());
-
-            const requestSnapshot = await getDocs(collection(db, "service_requests"));
-            const requests = requestSnapshot.docs.map(doc => doc.data());
-
-            const totalUser = user.length;
-            const workshop = work.length;
-            const job = requests.filter(
-                r => r.status === 'Completed' || r.status === 'Cancelled'
-            ).length;
-            const pending = work.filter(r => r.verified === false).length;
-
-            setStats({
-                totalUser,
-                workshop,
-                job,
+            setStats(prev => ({
+                ...prev,
+                totalUser: drivers.length,
+                workshop: work.length,
                 pending,
-            });
-        }catch (error: any){
-            console.error("Error fetching stats:", error);
+            }));
+        }, (error: any) => {
+            console.error("Error listening to users:", error);
             if (error?.code === 'permission-denied') {
                 Alert.alert(
                     "Permission Denied",
-                    "Admin cannot read this workshop's data. Publish the updated Firestore rules from firestore.rules (see FIRESTORE_RULES.md)."
+                    "Admin cannot read workshop/user data. Publish the updated Firestore rules from firestore.rules (see FIRESTORE_RULES.md)."
                 );
             }
-        }
-    };
+        });
+
+        const unsubscribeRequests = onSnapshot(collection(db, "service_requests"), (requestSnapshot) => {
+            const requests = requestSnapshot.docs.map(doc => doc.data());
+            const job = requests.filter(
+                r => r.status === 'Completed' || r.status === 'Cancelled'
+            ).length;
+
+            setStats(prev => ({
+                ...prev,
+                job,
+            }));
+        }, (error: any) => {
+            console.error("Error listening to requests:", error);
+        });
+
+        return () => {
+            unsubscribeUsers();
+            unsubscribeRequests();
+        };
+    }, []);
     const actions = [
         { id: '1', title: 'View Users', subtitle: 'Manage driver & staff accounts', icon: 'users', color: '#6366f1', onPress: () => router.push('/viewuserA' as Href) },
         { id: '2', title: 'Manage Workshops', subtitle: 'Review and verify service centers', icon: 'tool', color: '#8b5cf6', onPress: () => router.push('/manageworkshopA' as Href) },
@@ -121,6 +116,25 @@ export default function AdminDashboard() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 40 }}
             >
+                {stats.pending > 0 && (
+                    <TouchableOpacity
+                        activeOpacity={0.9}
+                        onPress={() => router.push('/manageworkshopA' as Href)}
+                        style={styles.notificationBanner}
+                    >
+                        <Surface style={styles.notificationSurface} elevation={1}>
+                            <MaterialCommunityIcons name="bell-ring" size={24} color="#d97706" />
+                            <View style={styles.notificationContent}>
+                                <Text style={styles.notificationTitle}>Pending Review</Text>
+                                <Text style={styles.notificationText}>
+                                    There {stats.pending === 1 ? 'is' : 'are'} {stats.pending} workshop registration{stats.pending > 1 ? 's' : ''} waiting for verification.
+                                </Text>
+                            </View>
+                            <Feather name="arrow-right" size={18} color="#d97706" />
+                        </Surface>
+                    </TouchableOpacity>
+                )}
+
                 <View style={styles.statsGrid}>
 
                         <ModernCard style={styles.statCard} elevation={2}>
@@ -173,7 +187,12 @@ export default function AdminDashboard() {
                                     <Feather name={action.icon as any} size={20} color={action.color} />
                                 </View>
                                 <View style={styles.actionTextContainer}>
-                                    <Text variant="titleMedium" style={styles.actionText}>{action.title}</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <Text variant="titleMedium" style={styles.actionText}>{action.title}</Text>
+                                        {action.id === '2' && stats.pending > 0 && (
+                                            <View style={styles.bulletNotification} />
+                                        )}
+                                    </View>
                                     <Text variant="bodySmall" style={styles.actionSubtitle}>{action.subtitle}</Text>
                                 </View>
                                 <Feather name="chevron-right" size={20} color="#cbd5e1" />
@@ -283,6 +302,41 @@ const styles = StyleSheet.create({
     },
     actionSubtitle: {
         color: '#64748b',
+        marginTop: 2,
+    },
+    bulletNotification: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#ef4444',
+        marginLeft: 8,
+    },
+    notificationBanner: {
+        marginBottom: 15,
+        marginTop: 10,
+    },
+    notificationSurface: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fffbeb',
+        borderRadius: 16,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#fef3c7',
+    },
+    notificationContent: {
+        flex: 1,
+        marginLeft: 12,
+        marginRight: 8,
+    },
+    notificationTitle: {
+        fontSize: 15,
+        fontWeight: 'bold',
+        color: '#b45309',
+    },
+    notificationText: {
+        fontSize: 13,
+        color: '#d97706',
         marginTop: 2,
     },
 });

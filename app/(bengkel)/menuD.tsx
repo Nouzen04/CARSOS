@@ -9,6 +9,7 @@ import { SegmentedButtons, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapComponent from '../../components/MapComponent';
 import { auth, db } from '../../firebase';
+import { sendPushNotification } from '../../utils/notificationService';
 
 const JobCard = ({ job, type, workshopLocation }: { job: any, type: 'incoming' | 'waiting', workshopLocation: any }) => {
     const handleStatusUpdate = async (newStatus: string) => {
@@ -16,8 +17,38 @@ const JobCard = ({ job, type, workshopLocation }: { job: any, type: 'incoming' |
             await updateDoc(doc(db, 'service_requests', job.id), {
                 status: newStatus
             });
+
+            // Send push notification to the driver (pemandu)
+            if (job.pemanduID) {
+                const driverDocRef = doc(db, 'users', job.pemanduID);
+                const driverDocSnap = await getDoc(driverDocRef);
+                if (driverDocSnap.exists()) {
+                    const driverData = driverDocSnap.data();
+                    const expoPushToken = driverData.expoPushToken;
+                    if (expoPushToken) {
+                        const workshopName = job.workshopName || "The workshop";
+                        let title = "";
+                        let body = "";
+
+                        if (newStatus === 'Accepted') {
+                            title = "Request Accepted 🔧";
+                            body = `${workshopName} has accepted your request and is coming to help!`;
+                        } else if (newStatus === 'Completed') {
+                            title = "Service Completed 🎉";
+                            body = `Your service request with ${workshopName} has been completed. Please rate our service!`;
+                        } else if (newStatus === 'Cancelled') {
+                            title = "Request Cancelled ⚠️";
+                            body = `Sorry, ${workshopName} was unable to accept your request.`;
+                        }
+
+                        if (title && body) {
+                            await sendPushNotification(expoPushToken, title, body);
+                        }
+                    }
+                }
+            }
         } catch (error) {
-            console.error("Error updating status:", error);
+            console.error("Error updating status and sending notification:", error);
         }
     };
 
@@ -126,7 +157,8 @@ export default function BengkelHome() {
     const [requests, setRequests] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [workshopData, setWorkshopData] = useState<any>(null);
-    const prevRequestCount = useRef(0);
+    const isInitialLoad = useRef(true);
+    const prevPendingCount = useRef(0);
 
     useEffect(() => {
         if (!auth.currentUser) return;
@@ -152,14 +184,16 @@ export default function BengkelHome() {
                 ...doc.data()
             }));
 
-            // Notify if new requests arrive
-            if (prevRequestCount.current > 0 && list.length > prevRequestCount.current) {
-                const newRequests = list.length - prevRequestCount.current;
-                if (list.some(r => r.status === 'Pending' && !requests.find(old => old.id === r.id))) {
-                    Alert.alert("New Request", `You have ${newRequests} new service request(s)!`);
-                }
+            const pendingList = list.filter(r => r.status === 'Pending');
+
+            // Notify if new pending requests arrive
+            if (!isInitialLoad.current && pendingList.length > prevPendingCount.current) {
+                const newRequests = pendingList.length - prevPendingCount.current;
+                Alert.alert("New Request", `You have ${newRequests} new service request(s)!`);
             }
-            prevRequestCount.current = list.length;
+            
+            isInitialLoad.current = false;
+            prevPendingCount.current = pendingList.length;
 
             setRequests(list);
             setLoading(false);

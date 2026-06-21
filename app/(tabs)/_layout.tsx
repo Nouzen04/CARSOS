@@ -4,7 +4,7 @@ import Colors from '@/constants/Colors';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Href, Tabs, router } from 'expo-router';
 import React from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { IconButton, Surface } from 'react-native-paper';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
@@ -42,6 +42,8 @@ export default function TabLayout() {
   const [searchPhrase, setSearchPhrase] = React.useState("");
   const [clicked, setClicked] = React.useState(false);
 
+  const prevStatusesRef = React.useRef<{[key: string]: string}>({});
+
   React.useEffect(() => {
     if (!auth.currentUser) return;
 
@@ -56,6 +58,43 @@ export default function TabLayout() {
         return !data.dismissedByPemandu && !data.readByPemandu;
       });
       setUnreadCount(unread.length);
+
+      // Check for status updates
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'modified') {
+          const data = change.doc.data();
+          const oldStatus = prevStatusesRef.current[change.doc.id];
+          const newStatus = data.status;
+          const workshopName = data.workshopName || 'the workshop';
+
+          if (oldStatus && oldStatus !== newStatus) {
+            if (newStatus === 'Completed') {
+              Alert.alert(
+                "Service Completed 🎉",
+                `Your service request with ${workshopName} has been completed! Please check your Inbox to rate the workshop.`
+              );
+            } else if (newStatus === 'Accepted') {
+              Alert.alert(
+                "Request Accepted 🔧",
+                `${workshopName} has accepted your request and is on their way!`
+              );
+            } else if (newStatus === 'Cancelled') {
+              Alert.alert(
+                "Request Cancelled ⚠️",
+                `${workshopName} has cancelled your request. Please try contacting another workshop.`
+              );
+            }
+          }
+        }
+        
+        // Save current status for comparison next time
+        prevStatusesRef.current[change.doc.id] = change.doc.data().status;
+      });
+
+      // Save/refresh all current statuses
+      snapshot.docs.forEach((doc) => {
+        prevStatusesRef.current[doc.id] = doc.data().status;
+      });
     });
 
     return () => unsubscribe();
@@ -214,14 +253,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   sosIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#ef4444',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -25,
-    borderWidth: 4,
+    borderWidth: 2,
     borderColor: '#fff',
   },
 });
