@@ -1,3 +1,4 @@
+import { WorkshopImage } from '@/components/WorkshopImage';
 import Feather from '@expo/vector-icons/Feather';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -7,7 +8,6 @@ import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/fires
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapComponent from '../../components/MapComponent';
-import { WorkshopImage } from '@/components/WorkshopImage';
 import { auth, db } from '../../firebase';
 import { formatDistance, getDirectionsUrl, getDistance, getGoogleMapsUrl } from '../../utils/mapService';
 
@@ -119,7 +119,7 @@ export default function infoBengkel() {
                 : getGoogleMapsUrl(bengkelData.location.latitude, bengkelData.location.longitude, bengkelData.name);
             Linking.openURL(url);
         } else {
-            Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bengkelData?.name || 'SNS Service')}`);
+            Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bengkelData.address)}`);
         }
     };
 
@@ -165,9 +165,6 @@ export default function infoBengkel() {
 
                 {/* Quick Info Tags */}
                 <View style={styles.tagContainer}>
-                    <View style={[styles.tag, { backgroundColor: '#E8F5E9' }]}>
-                        <Text style={[styles.tagText, { color: '#4CAF50' }]}>Open Now</Text>
-                    </View>
                     <View style={styles.tag}>
                         <Text style={styles.tagText}>{distance ? formatDistance(distance) : 'Calculating...'} away</Text>
                     </View>
@@ -414,7 +411,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 12,
-        justifyContent: 'space-between',
     },
     serviceItem: {
         width: (width - 64) / 3,
@@ -431,19 +427,6 @@ const styles = StyleSheet.create({
         color: '#333',
         textAlign: 'center',
         fontWeight: '500',
-    },
-    facilitiesRow: {
-        flexDirection: 'row',
-        gap: 16,
-    },
-    facility: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    facilityText: {
-        fontSize: 13,
-        color: '#666',
     },
     photoList: {
         marginTop: 8,

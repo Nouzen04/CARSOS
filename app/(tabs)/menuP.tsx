@@ -66,7 +66,7 @@ export default function PemanduHomeScreen() {
     <ScrollView 
       style={styles.container} 
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: TAB_BAR_HEIGHT + 24 }}
+      contentContainerStyle={{ paddingBottom: TAB_BAR_HEIGHT}}
     >
       <View style={styles.content}>
         <View style={styles.welcomeSection}>
@@ -124,6 +124,7 @@ export default function PemanduHomeScreen() {
           <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 20 }} />
         ) : filteredWorkshops.length > 0 ? (
           filteredWorkshops.map((workshop) => (
+            <View style={styles.shadowWrapper}>
             <ModernCard key={workshop.id} style={styles.bengkelCard} elevation={2}>
               <TouchableOpacity
                 activeOpacity={0.9}
@@ -154,6 +155,7 @@ export default function PemanduHomeScreen() {
                 </View>
               </TouchableOpacity>
             </ModernCard>
+            </View>
           ))
         ) : (
           <View style={styles.emptyState}>
@@ -213,10 +215,22 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1e293b',
   },
+  shadowWrapper: {
+    shadowColor: '#000000', 
+    shadowOffset: {
+      width: 0,
+      height: 4,                
+    },
+    shadowOpacity: 0.3,        
+    shadowRadius: 5,            
+    elevation: 6,               
+    padding: 16,
+  },
   bengkelCard: {
     marginBottom: 16,
     borderRadius: 16,
     overflow: 'hidden',
+    backgroundColor: '#ffffff',
   },
   bengkelContent: {
     flexDirection: 'column',

@@ -113,18 +113,26 @@ export default function TabLayout() {
         tabBarInactiveTintColor: '#94a3b8',
         tabBarHideOnKeyboard: Platform.OS === 'android' ? true : false,
         tabBarStyle: [
-          styles.tabBar,
           {
+            // Let expo-router place it, but size it correctly for iPhone safe-area.
             height: 60 + insets.bottom,
-            paddingBottom: insets.bottom > 0 ? insets.bottom : 8
-          }
+            paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+            backgroundColor: '#fff',
+            borderTopWidth: 1,
+            borderTopColor: '#f1f5f9',
+            paddingTop: 8,
+            zIndex: 999,
+            elevation: 10,
+          },
         ],
+
         tabBarLabelStyle: styles.tabBarLabel,
         headerShown: useClientOnlyValue(false, true),
         headerStyle: styles.header,
         headerTitleStyle: styles.headerTitle,
         headerShadowVisible: false,
       }}>
+
       <Tabs.Screen
         name="menuP"
         options={{
@@ -247,16 +255,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: 8,
   },
-  // 4. CLEAN UP THE TABBAR STYLES (Remove fixed heights/paddings)
+  // Tab bar styling: keep it layout-driven (especially important on iOS)
   tabBar: {
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: '#f1f5f9',
     backgroundColor: '#fff',
-    position: 'absolute', // Ensures it stays layout independent
-    left: 0,
-    right: 0,
-    bottom: 0,
+    zIndex: 999,
+    elevation: 10,
   },
   tabBarLabel: {
     fontSize: 12,
