@@ -3,10 +3,11 @@ import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Href, Tabs, router } from 'expo-router';
-import React from 'react';
-import { Alert, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
-import { IconButton, Surface } from 'react-native-paper';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import React from 'react';
+import { Alert, Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { IconButton, Surface } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { auth, db } from '../../firebase';
 
 interface SearchBarProps {
@@ -42,7 +43,9 @@ export default function TabLayout() {
   const [searchPhrase, setSearchPhrase] = React.useState("");
   const [clicked, setClicked] = React.useState(false);
 
-  const prevStatusesRef = React.useRef<{[key: string]: string}>({});
+  const insets = useSafeAreaInsets();
+
+  const prevStatusesRef = React.useRef<{ [key: string]: string }>({});
 
   React.useEffect(() => {
     if (!auth.currentUser) return;
@@ -59,7 +62,6 @@ export default function TabLayout() {
       });
       setUnreadCount(unread.length);
 
-      // Check for status updates
       snapshot.docChanges().forEach((change) => {
         if (change.type === 'modified') {
           const data = change.doc.data();
@@ -86,12 +88,10 @@ export default function TabLayout() {
             }
           }
         }
-        
-        // Save current status for comparison next time
+
         prevStatusesRef.current[change.doc.id] = change.doc.data().status;
       });
 
-      // Save/refresh all current statuses
       snapshot.docs.forEach((doc) => {
         prevStatusesRef.current[doc.id] = doc.data().status;
       });
@@ -111,7 +111,14 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors.light.primary,
         tabBarInactiveTintColor: '#94a3b8',
-        tabBarStyle: styles.tabBar,
+        tabBarHideOnKeyboard: Platform.OS === 'android' ? true : false,
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            height: 60 + insets.bottom,
+            paddingBottom: insets.bottom > 0 ? insets.bottom : 8
+          }
+        ],
         tabBarLabelStyle: styles.tabBarLabel,
         headerShown: useClientOnlyValue(false, true),
         headerStyle: styles.header,
@@ -169,7 +176,7 @@ export default function TabLayout() {
         options={{
           headerTitle: 'Emergency',
           tabBarLabel: 'Emergency',
-          tabBarIcon: ({ color }) => (
+          tabBarIcon: () => (
             <Surface style={styles.sosIconContainer} elevation={2}>
               <MaterialCommunityIcons name="alert-octagon" size={24} color="#fff" />
             </Surface>
@@ -240,13 +247,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: 8,
   },
+  // 4. CLEAN UP THE TABBAR STYLES (Remove fixed heights/paddings)
   tabBar: {
-    height: 65,
-    paddingBottom: 10,
-    paddingTop: 10,
+    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: '#f1f5f9',
     backgroundColor: '#fff',
+    position: 'absolute', // Ensures it stays layout independent
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   tabBarLabel: {
     fontSize: 12,

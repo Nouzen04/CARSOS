@@ -2,7 +2,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import Groq from 'groq-sdk';
 import { marked } from 'marked';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -18,9 +18,10 @@ import {
     View
 } from 'react-native';
 import RenderHTML from 'react-native-render-html';
-import { auth, db } from '../../firebase'; // Accessing configured Firestore and Auth
+import { auth, db } from '../../firebase';
+// 1. IMPORT SAFE AREA TO CALCULATE EXACT OFFSETS
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-// Configuration - USER NEEDS TO ADD THEIR GROQ API KEY HERE
 const GROQ_API_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY || "";
 const groq = new Groq({ apiKey: GROQ_API_KEY });
 
@@ -52,6 +53,8 @@ export default function AIChatScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const flatListRef = useRef<FlatList>(null);
     const { width } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
+    const TAB_BAR_HEIGHT = 60 + insets.bottom;
 
     const SYSTEM_INSTRUCTION =
         "You are a senior workshop foreman helping drivers on the CARSOS emergency app. " +
@@ -71,7 +74,6 @@ export default function AIChatScreen() {
         if (!GROQ_API_KEY) {
             return "AI is not configured. Add EXPO_PUBLIC_GROQ_API_KEY to your .env file and restart the app.";
         }
-
         try {
             const history = messages
                 .filter(m => m.id !== '1')
@@ -124,7 +126,6 @@ export default function AIChatScreen() {
         setMessages((prev) => [...prev, aiMessage]);
         setIsLoading(false);
 
-        // Save message to database for logging (requires Firestore rules + signed-in user)
         const uid = auth.currentUser?.uid;
         if (uid) {
             try {
@@ -146,7 +147,6 @@ export default function AIChatScreen() {
             Alert.alert("Login Required", "Please sign in to submit feedback.");
             return;
         }
-
         try {
             await addDoc(collection(db, 'ai_feedback'), {
                 userId: uid,
@@ -158,14 +158,11 @@ export default function AIChatScreen() {
             setMessages(prev =>
                 prev.map(m => m.id === messageId ? { ...m, feedbackGiven: true } : m)
             );
-
             Alert.alert("Feedback Received", "Thank you! This helps improve our AI advice.");
         } catch (error) {
             console.error("Feedback Error:", error);
         }
     };
-
-    // ... (inside the component)
 
     const renderMessage = ({ item }: { item: Message }) => (
         <View style={[
@@ -202,12 +199,22 @@ export default function AIChatScreen() {
         </View>
     );
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (messages.length > 0) {
+                flatListRef.current?.scrollToEnd({ animated: true });
+            }
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [messages.length]);
+
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
             style={styles.container}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 95 : 95}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? TAB_BAR_HEIGHT + 50 : 20}
         >
+            {/* Header Container */}
             <View style={styles.header}>
                 <View style={styles.botIcon}>
                     <MaterialIcons name="auto-awesome" size={20} color="white" />
@@ -215,12 +222,12 @@ export default function AIChatScreen() {
                 <Text style={styles.headerTitle}>AI Mechanical Assistant</Text>
             </View>
 
+            {/* Main Message Board */}
             <FlatList
                 ref={flatListRef}
                 data={messages}
                 renderItem={renderMessage}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.messageList}
+                contentContainerStyle={[styles.messageList, { paddingBottom: 40 }]}
                 ListHeaderComponent={() => (
                     <View style={styles.quickDiagnosisGrid}>
                         <Text style={styles.sectionTitle}>Quick Diagnosis</Text>
@@ -238,9 +245,9 @@ export default function AIChatScreen() {
                         </ScrollView>
                     </View>
                 )}
-                onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
             />
 
+            {/* Processing Indicator */}
             {isLoading && (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator color="#2f95dc" size="small" />
@@ -248,7 +255,8 @@ export default function AIChatScreen() {
                 </View>
             )}
 
-            <View style={styles.inputContainer}>
+            {/* 3. DYNAMICALLY PUSH CONTAINER UP BASED ON TAB BAR HEIGHT */}
+            <View style={[styles.inputContainer, { marginBottom: TAB_BAR_HEIGHT + 6 }]}>
                 <TextInput
                     style={styles.input}
                     placeholder="Type what's happening..."
@@ -267,126 +275,43 @@ export default function AIChatScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F7F9FB',
+        backgroundColor: '#f8fafc',
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
-        backgroundColor: 'white',
+        paddingHorizontal: 16,
+        paddingTop: Platform.OS === 'ios' ? 50 : 20,
+        paddingBottom: 16,
+        backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#EEE',
+        borderBottomColor: '#f1f5f9',
     },
     botIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         backgroundColor: '#2f95dc',
-        width: 32,
-        height: 32,
-        borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
+        marginRight: 12,
     },
     headerTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginLeft: 12,
-        color: '#333',
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#0f172a',
     },
     messageList: {
         padding: 16,
     },
-    messageBubble: {
-        maxWidth: '85%',
-        padding: 16,
-        borderRadius: 18,
-        marginBottom: 16,
-        elevation: 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-    },
-    userBubble: {
-        alignSelf: 'flex-end',
-        backgroundColor: '#2f95dc',
-        borderBottomRightRadius: 4,
-    },
-    aiBubble: {
-        alignSelf: 'flex-start',
-        backgroundColor: 'white',
-        borderBottomLeftRadius: 4,
-    },
-    messageText: {
-        fontSize: 15,
-        lineHeight: 22,
-    },
-    userText: {
-        color: 'white',
-    },
-    aiText: {
-        color: '#2C3E50',
-    },
-    inputContainer: {
-        flexDirection: 'row',
-        padding: 10,
-        backgroundColor: 'white',
-        alignItems: 'center',
-        borderTopWidth: 1,
-        borderTopColor: '#EEE',
-    },
-    input: {
-        flex: 1,
-        backgroundColor: '#F1F3F5',
-        borderRadius: 25,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        fontSize: 15,
-        maxHeight: 100,
-    },
-    sendButton: {
-        backgroundColor: '#2f95dc',
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginLeft: 10,
-    },
-    loadingContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        marginBottom: 12,
-    },
-    loadingText: {
-        marginLeft: 10,
-        fontSize: 13,
-        color: '#7F8C8D',
-        fontStyle: 'italic',
-    },
-    feedbackContainer: {
-        marginTop: 12,
-        paddingTop: 12,
-        borderTopWidth: 1,
-        borderTopColor: '#F0F0F0',
-        alignItems: 'center',
-    },
-    feedbackPrompt: {
-        fontSize: 12,
-        color: '#95A5A6',
-        marginBottom: 8,
-    },
-    feedbackButtons: {
-        flexDirection: 'row',
-    },
     quickDiagnosisGrid: {
-        marginBottom: 20,
+        marginBottom: 16,
     },
     sectionTitle: {
         fontSize: 14,
-        fontWeight: '700',
-        color: '#888',
-        marginBottom: 10,
-        textTransform: 'uppercase',
+        fontWeight: '600',
+        color: '#64748b',
+        marginBottom: 8,
     },
     pillContainer: {
         flexDirection: 'row',
@@ -394,17 +319,91 @@ const styles = StyleSheet.create({
     pill: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'white',
+        backgroundColor: '#fff',
+        paddingHorizontal: 12,
         paddingVertical: 8,
-        paddingHorizontal: 16,
         borderRadius: 20,
-        marginRight: 10,
+        marginRight: 8,
         borderWidth: 1,
-        borderColor: '#D1D9E6',
+        borderColor: '#e2e8f0',
     },
     pillText: {
         fontSize: 13,
-        color: '#34495E',
+        color: '#334155',
         fontWeight: '500',
-    }
+    },
+    messageBubble: {
+        maxWidth: '85%',
+        padding: 12,
+        borderRadius: 16,
+        marginBottom: 12,
+    },
+    userBubble: {
+        alignSelf: 'flex-end',
+        backgroundColor: '#2f95dc',
+    },
+    aiBubble: {
+        alignSelf: 'flex-start',
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+    },
+    userText: {
+        color: '#fff',
+        fontSize: 15,
+        lineHeight: 22,
+    },
+    feedbackContainer: {
+        marginTop: 12,
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#f1f5f9',
+    },
+    feedbackPrompt: {
+        fontSize: 12,
+        color: '#64748b',
+        marginBottom: 6,
+    },
+    feedbackButtons: {
+        flexDirection: 'row',
+    },
+    loadingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 12,
+    },
+    loadingText: {
+        marginLeft: 8,
+        color: '#64748b',
+        fontSize: 13,
+    },
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        backgroundColor: '#fff',
+        borderTopWidth: 1,
+        borderTopColor: '#e2e8f0',
+    },
+    input: {
+        flex: 1,
+        backgroundColor: '#f1f5f9',
+        borderRadius: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        fontSize: 15,
+        maxHeight: 100,
+        color: '#0f172a',
+    },
+    sendButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#2f95dc',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: 8,
+    },
 });

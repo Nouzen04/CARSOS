@@ -7,6 +7,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Surface, Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { db } from '../../firebase';
 
 const SERVICES = [
@@ -20,6 +21,9 @@ export default function PemanduHomeScreen() {
   const [workshops, setWorkshops] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+
+  const insets = useSafeAreaInsets();
+  const TAB_BAR_HEIGHT = 60 + insets.bottom;
 
   useEffect(() => {
     fetchWorkshops();
@@ -51,29 +55,19 @@ export default function PemanduHomeScreen() {
 
   const filteredWorkshops = workshops.filter((workshop) => {
     if (!selectedServiceId) return true;
-    
-    // Mapping:
-    // id '1' (Flat Tyre) -> selectedServices includes 2 (Tire Change)
-    // id '2' (Towing) -> selectedServices includes 1 (Full Service) (Towing isn't in signup list)
-    // id '3' (Battery) -> selectedServices includes 1 (Full Service) or 4 (Engine Tune)
-    // id '4' (Engine) -> selectedServices includes 4 (Engine Tune)
-    if (selectedServiceId === '1') {
-      return workshop.selectedServices?.includes(2);
-    }
-    if (selectedServiceId === '2') {
-      return workshop.selectedServices?.includes(1);
-    }
-    if (selectedServiceId === '3') {
-      return workshop.selectedServices?.includes(1) || workshop.selectedServices?.includes(4);
-    }
-    if (selectedServiceId === '4') {
-      return workshop.selectedServices?.includes(4);
-    }
+    if (selectedServiceId === '1') return workshop.selectedServices?.includes(2);
+    if (selectedServiceId === '2') return workshop.selectedServices?.includes(1);
+    if (selectedServiceId === '3') return workshop.selectedServices?.includes(1) || workshop.selectedServices?.includes(4);
+    if (selectedServiceId === '4') return workshop.selectedServices?.includes(4);
     return true;
   });
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={styles.container} 
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: TAB_BAR_HEIGHT + 24 }}
+    >
       <View style={styles.content}>
         <View style={styles.welcomeSection}>
           <Text variant="headlineSmall" style={styles.welcomeTitle}>Need assistance?</Text>
@@ -171,20 +165,21 @@ export default function PemanduHomeScreen() {
   );
 }
 
+// Keep your existing styles block exactly as it was below this line...
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
   },
   content: {
-    padding: 24,
+    padding: 16,
   },
   welcomeSection: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   welcomeTitle: {
     fontWeight: 'bold',
-    color: '#0f172a',
+    color: '#1e293b',
   },
   welcomeSubtitle: {
     color: '#64748b',
@@ -193,38 +188,34 @@ const styles = StyleSheet.create({
   serviceGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 32,
+    marginBottom: 24,
   },
   serviceItem: {
-    width: '22%',
     alignItems: 'center',
+    flex: 1,
   },
   serviceIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 20,
-    backgroundColor: '#fff',
+    width: 56,
+    height: 56,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    backgroundColor: '#fff',
   },
   serviceLabel: {
-    textAlign: 'center',
-    color: '#334155',
+    marginTop: 8,
+    color: '#64748b',
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 16,
   },
   sectionTitle: {
     fontWeight: 'bold',
-    color: '#0f172a',
+    color: '#1e293b',
   },
   bengkelCard: {
-    padding: 0,
-    marginBottom: 20,
+    marginBottom: 16,
+    borderRadius: 16,
     overflow: 'hidden',
   },
   bengkelContent: {
@@ -232,7 +223,7 @@ const styles = StyleSheet.create({
   },
   bengkelImage: {
     width: '100%',
-    height: 180,
+    height: 160,
   },
   bengkelDetails: {
     padding: 16,
@@ -245,7 +236,9 @@ const styles = StyleSheet.create({
   },
   bengkelName: {
     fontWeight: 'bold',
-    color: '#0f172a',
+    color: '#1e293b',
+    flex: 1,
+    marginRight: 8,
   },
   ratingBadge: {
     flexDirection: 'row',
@@ -256,39 +249,22 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   ratingText: {
-    color: '#92400e',
     fontSize: 12,
     fontWeight: 'bold',
+    color: '#d97706',
     marginLeft: 4,
   },
   bengkelInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
   },
   bengkelInfoText: {
     color: '#64748b',
     marginLeft: 6,
-  },
-  tagGrid: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  tag: {
-    backgroundColor: '#f1f5f9',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  tagText: {
-    fontSize: 11,
-    color: '#475569',
-    fontWeight: '500',
+    flex: 1,
   },
   emptyState: {
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
+    padding: 32,
   },
 });
