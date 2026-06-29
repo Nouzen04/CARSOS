@@ -2,8 +2,10 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Linking, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabThreeScreen() {
+    const insets = useSafeAreaInsets();
     const handleCall = (no: string) => {
         Linking.openURL('tel:' + no);
     };
@@ -23,7 +25,7 @@ export default function TabThreeScreen() {
     ];
 
     return (
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={[styles.contentContainer, {paddingBottom: 60 + insets.bottom + 20 }]}>  
             <View style={styles.header}>
                 <View style={styles.headerIconContainer}>
                     <MaterialCommunityIcons name="alert-decagram" size={32} color="#EF4444" />

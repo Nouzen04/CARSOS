@@ -1,19 +1,22 @@
-import { StyleSheet, View, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
-import { Text, Avatar, IconButton, Surface, useTheme } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { auth, db } from '../../firebase';
-import { signOut } from 'firebase/auth';
-import { doc, getDoc, collection, getDocs, query, where, addDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
-import { router, Href } from 'expo-router';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { ModernCard } from '@/components/ModernCard';
 import Colors from '@/constants/Colors';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Href, router } from 'expo-router';
+import { signOut } from 'firebase/auth';
+import { addDoc, collection, doc, getDoc, getDocs, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Avatar, Text } from 'react-native-paper';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { auth, db } from '../../firebase';
 
 export default function PemanduProfile() {
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  const insets = useSafeAreaInsets();
+
 
   useEffect(() => {
     fetchUserData();
@@ -124,7 +127,9 @@ export default function PemanduProfile() {
         </SafeAreaView>
       </LinearGradient>
 
-      <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.body} showsVerticalScrollIndicator={false} contentContainerStyle={{
+          paddingBottom: 60 + insets.bottom + 30
+        }}>
         <ModernCard style={styles.infoCard} elevation={1}>
            <Text variant="titleMedium" style={styles.sectionTitle}>Account Information</Text>
            

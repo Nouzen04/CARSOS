@@ -66,7 +66,10 @@ export default function PemanduHomeScreen() {
     <ScrollView 
       style={styles.container} 
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: TAB_BAR_HEIGHT}}
+      contentContainerStyle={{ paddingBottom: 60 + insets.bottom + 20 }}
+      // iOS: avoid any accidental overlay stacking over the tab bar area
+      keyboardShouldPersistTaps="handled"
+      pointerEvents="auto"
     >
       <View style={styles.content}>
         <View style={styles.welcomeSection}>
@@ -124,7 +127,7 @@ export default function PemanduHomeScreen() {
           <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 20 }} />
         ) : filteredWorkshops.length > 0 ? (
           filteredWorkshops.map((workshop) => (
-            <View style={styles.shadowWrapper}>
+            <View key={workshop.id} style={styles.shadowWrapper}>
             <ModernCard key={workshop.id} style={styles.bengkelCard} elevation={2}>
               <TouchableOpacity
                 activeOpacity={0.9}
