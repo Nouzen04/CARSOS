@@ -4,7 +4,7 @@ import { collection, doc, onSnapshot, orderBy, query, updateDoc, where, writeBat
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Button } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RatingModal } from '../../components/RatingModal';
 import { auth, db } from '../../firebase';
 
@@ -121,9 +121,13 @@ export default function NotificationScreen() {
     }
   };
 
+   const insets = useSafeAreaInsets()
+
   return (
-    <ScrollView style={styles.scrollView}>
-      <SafeAreaView style={styles.container}>
+    <ScrollView style={styles.scrollView} 
+    contentContainerStyle={{ 
+        paddingTop: insets.top > 0 ? insets.top : 16, 
+        paddingBottom: 60 + insets.bottom + 30 }}>
         <Text style={styles.pageTitle}>Notifications</Text>
         {loading ? (
           <ActivityIndicator size="large" color="#8baaff" style={{ marginTop: 50 }} />
@@ -198,8 +202,7 @@ export default function NotificationScreen() {
             )}
           </View>
         )}
-      </SafeAreaView>
-    </ScrollView>
+    </ScrollView> 
   );
 }
 

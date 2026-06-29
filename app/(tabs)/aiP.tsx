@@ -18,9 +18,8 @@ import {
     View
 } from 'react-native';
 import RenderHTML from 'react-native-render-html';
-import { auth, db } from '../../firebase';
-// 1. IMPORT SAFE AREA TO CALCULATE EXACT OFFSETS
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { auth, db } from '../../firebase';
 
 const GROQ_API_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY || "";
 const groq = new Groq({ apiKey: GROQ_API_KEY });
@@ -213,6 +212,7 @@ export default function AIChatScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
             style={styles.container}
             keyboardVerticalOffset={Platform.OS === 'ios' ? TAB_BAR_HEIGHT + 50 : 20}
+            pointerEvents="box-none"
         >
             {/* Header Container */}
             <View style={styles.header}>
@@ -227,7 +227,7 @@ export default function AIChatScreen() {
                 ref={flatListRef}
                 data={messages}
                 renderItem={renderMessage}
-                contentContainerStyle={[styles.messageList, { paddingBottom: 40 }]}
+                contentContainerStyle={[styles.messageList, { paddingBottom: 40 + insets.bottom + 60 }]}
                 ListHeaderComponent={() => (
                     <View style={styles.quickDiagnosisGrid}>
                         <Text style={styles.sectionTitle}>Quick Diagnosis</Text>
