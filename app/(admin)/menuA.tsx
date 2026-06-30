@@ -3,63 +3,75 @@ import Colors from '@/constants/Colors';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Href, router } from 'expo-router';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View, RefreshControl, ActivityIndicator } from 'react-native';
 import { IconButton, Surface, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { auth, db } from '../../firebase';
 
 export default function AdminDashboard() {
     const [stats, setStats] = useState({
-    totalUser: 0,
-    workshop: 0,
-    job: 0,
-    pending: 0,
+        totalUser: 0,
+        workshop: 0,
+        job: 0,
+        pending: 0,
     });
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
-    useEffect(() => {
-        const unsubscribeUsers = onSnapshot(collection(db, "users"), (userSnapshot) => {
+    const fetchStats = async () => {
+        try {
+            // 1. Fetch Users
+            const userSnapshot = await getDocs(collection(db, "users"));
             const allUsers = userSnapshot.docs.map(doc => doc.data());
             const drivers = allUsers.filter(u => u.role === 'pemandu');
             const work = allUsers.filter(u => u.role === 'bengkel');
             const pending = work.filter(r => r.verified === false && r.status !== 'rejected').length;
 
-            setStats(prev => ({
-                ...prev,
+            // 2. Fetch Service Requests
+            const requestSnapshot = await getDocs(collection(db, "service_requests"));
+            const requests = requestSnapshot.docs.map(doc => doc.data());
+            const job = requests.filter(
+                r => r.status === 'Completed' || r.status === 'Cancelled'
+            ).length;
+
+            setStats({
                 totalUser: drivers.length,
                 workshop: work.length,
                 pending,
-            }));
-        }, (error: any) => {
-            console.error("Error listening to users:", error);
+                job,
+            });
+        } catch (error: any) {
+            console.error("Error fetching stats:", error);
             if (error?.code === 'permission-denied') {
                 Alert.alert(
                     "Permission Denied",
                     "Admin cannot read workshop/user data. Publish the updated Firestore rules from firestore.rules (see FIRESTORE_RULES.md)."
                 );
             }
-        });
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
 
-        const unsubscribeRequests = onSnapshot(collection(db, "service_requests"), (requestSnapshot) => {
-            const requests = requestSnapshot.docs.map(doc => doc.data());
-            const job = requests.filter(
-                r => r.status === 'Completed' || r.status === 'Cancelled'
-            ).length;
-
-            setStats(prev => ({
-                ...prev,
-                job,
-            }));
-        }, (error: any) => {
-            console.error("Error listening to requests:", error);
-        });
-
-        return () => {
-            unsubscribeUsers();
-            unsubscribeRequests();
-        };
+    useEffect(() => {
+        fetchStats();
     }, []);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchStats();
+    };
+
+    if (loading && !refreshing) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' }}>
+                <ActivityIndicator size="large" color={Colors.light.primary} />
+            </View>
+        );
+    }
     const actions = [
         { id: '1', title: 'View Users', subtitle: 'Manage driver & staff accounts', icon: 'users', color: '#6366f1', onPress: () => router.push('/viewuserA' as Href) },
         { id: '2', title: 'Manage Workshops', subtitle: 'Review and verify service centers', icon: 'tool', color: '#8b5cf6', onPress: () => router.push('/manageworkshopA' as Href) },
@@ -115,6 +127,14 @@ export default function AdminDashboard() {
                 style={styles.content} 
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 40 }}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={Colors.light.primary}
+                        colors={[Colors.light.primary]}
+                    />
+                }
             >
                 {stats.pending > 0 && (
                     <TouchableOpacity

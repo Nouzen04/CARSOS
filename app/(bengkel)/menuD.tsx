@@ -175,7 +175,8 @@ export default function BengkelHome() {
 
         const q = query(
             collection(db, 'service_requests'),
-            where('bengkelID', '==', auth.currentUser.uid)
+            where('bengkelID', '==', auth.currentUser.uid),
+            where('status', 'in', ['Pending', 'Accepted'])
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -197,9 +198,14 @@ export default function BengkelHome() {
 
             setRequests(list);
             setLoading(false);
+        }, (error) => {
+            console.error("Error listening to service requests:", error);
+            setLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => {
+            unsubscribe();
+        };
     }, []);
 
     const filteredRequests = requests.filter(req =>

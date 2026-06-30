@@ -6,7 +6,7 @@ import { useLocalSearchParams } from "expo-router";
 import * as Sharing from 'expo-sharing';
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, View, RefreshControl } from "react-native";
 import { BarChart } from "react-native-chart-kit";
 import { Button, Surface, Text } from "react-native-paper";
 import { db } from "../../firebase";
@@ -14,6 +14,7 @@ import { db } from "../../firebase";
 export default function ReportDetail() {
     const { id, name } = useLocalSearchParams();
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [exporting, setExporting] = useState(false);
     const [ratingsList, setRatingsList] = useState<any[]>([]);
     const [stats, setStats] = useState({
@@ -81,7 +82,13 @@ export default function ReportDetail() {
             }
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
+    };
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchWorkshopStats();
     };
 
     const generatePDF = async () => {
@@ -169,7 +176,7 @@ export default function ReportDetail() {
         }
     };
 
-    if (loading) {
+    if (loading && !refreshing) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={Colors.light.primary} />
@@ -179,7 +186,18 @@ export default function ReportDetail() {
     }
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <ScrollView 
+            style={styles.container} 
+            contentContainerStyle={styles.content}
+            refreshControl={
+                <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    tintColor={Colors.light.primary}
+                    colors={[Colors.light.primary]}
+                />
+            }
+        >
             <View style={styles.header}>
                 <View style={styles.headerTop}>
                     <View style={{ flex: 1 }}>
