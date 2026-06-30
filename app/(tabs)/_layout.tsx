@@ -6,11 +6,10 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import React from 'react';
 import {
   Alert,
-  Platform,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { IconButton, Surface } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -114,26 +113,7 @@ export default function TabLayout() {
     <View style={{ flex: 1, pointerEvents: 'box-none' }}>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: Colors.light.primary,
-          tabBarInactiveTintColor: '#94a3b8',
-          tabBarHideOnKeyboard: Platform.OS === 'android' ? true : false,
-
-          tabBarStyle: [
-            {
-              height: 60 + insets.bottom,
-              paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
-              backgroundColor: '#fff',
-              borderTopWidth: 1,
-              borderTopColor: '#f1f5f9',
-              paddingTop: 8,
-            },
-          ],
-
-          tabBarLabelStyle: styles.tabBarLabel,
-          headerShown: false,
-          headerStyle: styles.header,
-          headerTitleStyle: styles.headerTitle,
-          headerShadowVisible: false,
+          tabBarActiveTintColor: Colors[(colorScheme ?? 'light') as keyof typeof Colors].tint,
         }}
       >
         <Tabs.Screen
@@ -188,7 +168,7 @@ export default function TabLayout() {
           name="sosP"
           options={{
             headerTitle: 'Emergency',
-            tabBarLabel: 'Emergency',
+            tabBarLabel: '',
             tabBarIcon: () => (
               <Surface style={styles.sosIconContainer} elevation={2} pointerEvents="none">
                 <MaterialCommunityIcons name="alert-octagon" size={24} color="#fff" />
@@ -260,13 +240,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   sosIconContainer: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     borderRadius: 22,
     backgroundColor: '#ef4444',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#fff',
+    marginTop: 10,
   },
 });
