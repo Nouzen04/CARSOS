@@ -121,88 +121,98 @@ export default function NotificationScreen() {
     }
   };
 
-   const insets = useSafeAreaInsets()
+  const getCardColor = (status: string) => {
+    switch (status) {
+      case 'Pending': return '#fff2dbff';
+      case 'Accepted': return '#eaf9ef';
+      case 'Cancelled': return '#ffecec';
+      case 'Completed': return '#eaf4f8';
+      default: return '#f8f9fa';
+    }
+  }
+
+  const insets = useSafeAreaInsets()
 
   return (
-    <ScrollView style={styles.scrollView} 
-    contentContainerStyle={{ 
-        paddingTop: insets.top > 0 ? insets.top : 16, 
-        paddingBottom: 60 + insets.bottom + 30 }}>
-        <Text style={styles.pageTitle}>Notifications</Text>
-        {loading ? (
-          <ActivityIndicator size="large" color="#8baaff" style={{ marginTop: 50 }} />
-        ) : (
-          <View style={styles.list}>
-            {notifications.length > 0 ? (
-              notifications.map((notif) => (
-                <View key={notif.id} style={styles.cardContainer}>
-                  <View style={[styles.card, !notif.readByPemandu && styles.cardUnread]}>
-                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(notif.status) }]}>
-                      <Text style={styles.statusText}>{notif.status}</Text>
+    <ScrollView style={styles.scrollView}
+      contentContainerStyle={{
+        paddingTop: insets.top + 20
+      }}>
+      <Text style={styles.pageTitle}>Notifications</Text>
+      {loading ? (
+        <ActivityIndicator size="large" color="#8baaff" style={{ marginTop: 50 }} />
+      ) : (
+        <View style={styles.list}>
+          {notifications.length > 0 ? (
+            notifications.map((notif) => (
+              <View key={notif.id} style={styles.cardContainer}>
+                <View style={[styles.card, { backgroundColor: getCardColor(notif.status) }, !notif.readByPemandu && styles.cardUnread]}>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(notif.status) }]}>
+                    <Text style={styles.statusText}>{notif.status}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.dismissBtn}
+                    onPress={() => handleDismiss(notif.id)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityLabel="Dismiss notification"
+                  >
+                    <Feather name="x" size={18} color="#000000ff" />
+                  </TouchableOpacity>
+                  <View style={styles.cardRow}>
+                    <View style={[styles.iconContainer, { backgroundColor: getCardColor(notif.status) }]}>
+                      <MaterialCommunityIcons
+                        name="wrench"
+                        size={28}
+                        color={getStatusColor(notif.status)}
+                      />
                     </View>
-                    <TouchableOpacity
-                      style={styles.dismissBtn}
-                      onPress={() => handleDismiss(notif.id)}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      accessibilityLabel="Dismiss notification"
-                    >
-                      <Feather name="x" size={18} color="#64748b" />
-                    </TouchableOpacity>
-                    <View style={styles.cardRow}>
-                      <View style={styles.iconContainer}>
-                        <MaterialCommunityIcons
-                          name="wrench"
-                          size={28}
-                          color={getStatusColor(notif.status)}
-                        />
-                      </View>
-                      <View style={styles.cardContent}>
-                        <Text style={styles.cardTitle}>{notif.workshopName || 'Service Update'}</Text>
-                        <Text style={styles.cardText}>
-                          {getStatusMessage(notif.status, notif.workshopName)}
-                        </Text>
-                        {formatTimestamp(notif.timestamp) ? (
-                          <Text style={styles.timeText}>{formatTimestamp(notif.timestamp)}</Text>
-                        ) : null}
-                      </View>
+                    <View style={styles.cardContent}>
+                      <Text style={styles.cardTitle}>{notif.workshopName || 'Service Update'}</Text>
+                      <Text style={styles.cardText}>
+                        {getStatusMessage(notif.status, notif.workshopName)}
+                      </Text>
+                      {formatTimestamp(notif.timestamp) ? (
+                        <Text style={styles.timeText}>{formatTimestamp(notif.timestamp)}</Text>
+                      ) : null}
+                      {notif.status === 'Completed' && !notif.rated && (
+                        <Button
+                          mode="contained"
+                          onPress={() => {
+                            setSelectedRequest(notif);
+                            setRatingModalVisible(true);
+                          }}
+                          style={styles.rateBtn}
+                          labelStyle={styles.rateBtnLabel}
+                          icon="star"
+                        >
+                          Rate Workshop
+                        </Button>
+                      )}
                     </View>
                   </View>
-                  {notif.status === 'Completed' && !notif.rated && (
-                    <Button
-                      mode="contained"
-                      onPress={() => {
-                        setSelectedRequest(notif);
-                        setRatingModalVisible(true);
-                      }}
-                      style={styles.rateBtn}
-                      labelStyle={styles.rateBtnLabel}
-                      icon="star"
-                    >
-                      Rate Workshop
-                    </Button>
-                  )}
                 </View>
-              ))
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>No notifications yet.</Text>
               </View>
-            )}
+            ))
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>No notifications yet.</Text>
+            </View>
+          )}
 
-            {selectedRequest && (
-              <RatingModal
-                visible={ratingModalVisible}
-                onClose={() => setRatingModalVisible(false)}
-                request={selectedRequest}
-                onSuccess={() => {
-                  setRatingModalVisible(false);
-                  setSelectedRequest(null);
-                }}
-              />
-            )}
-          </View>
-        )}
-    </ScrollView> 
+          {selectedRequest && (
+            <RatingModal
+              visible={ratingModalVisible}
+              onClose={() => setRatingModalVisible(false)}
+              request={selectedRequest}
+              onSuccess={() => {
+                setRatingModalVisible(false);
+                setSelectedRequest(null);
+              }}
+            />
+          )}
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
@@ -217,23 +227,33 @@ const styles = StyleSheet.create({
   },
   pageTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
     color: '#1a1a1a',
-    alignSelf: 'flex-start',
-    marginLeft: 10,
+    alignSelf: 'center',
+    fontFamily: 'SpaceMono-Bold',
+    textTransform: 'uppercase',
+    marginBottom: 24,
   },
   list: {
     width: '100%',
     alignSelf: 'stretch',
   },
   cardContainer: {
-    width: '100%',
-    marginBottom: 16,
+    width: '85%',
+    marginBottom: 24,
+    alignSelf: 'center',
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 1,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 3,
   },
   card: {
     width: '100%',
     backgroundColor: 'white',
-    borderRadius: 16,
+    borderRadius: 32,
     padding: 16,
     paddingTop: 40,
     elevation: 3,
@@ -257,7 +277,6 @@ const styles = StyleSheet.create({
     right: 10,
     zIndex: 3,
     padding: 6,
-    backgroundColor: '#f1f5f9',
     borderRadius: 16,
   },
   iconContainer: {
@@ -274,19 +293,20 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
+    fontFamily: 'SpaceMono-Bold',
+    color: '#000000ff',
     marginBottom: 4,
   },
   cardText: {
     fontSize: 13,
-    color: '#666',
+    fontFamily: 'Inter',
+    color: '#333',
     lineHeight: 18,
     marginBottom: 8,
   },
   timeText: {
     fontSize: 11,
-    color: '#999',
+    color: '#3b3b3bae',
   },
   statusBadge: {
     position: 'absolute',
@@ -295,7 +315,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderBottomRightRadius: 12,
-    borderTopLeftRadius:12
+    borderTopLeftRadius: 12
   },
   statusText: {
     color: 'white',
@@ -314,10 +334,10 @@ const styles = StyleSheet.create({
   rateBtn: {
     marginTop: 8,
     borderRadius: 12,
-    backgroundColor: '#0f172a',
   },
   rateBtnLabel: {
     fontSize: 12,
     fontWeight: 'bold',
+    fontFamily: 'Inter-Bold'
   },
 });

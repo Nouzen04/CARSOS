@@ -5,22 +5,21 @@ import {
   ThemeProvider
 } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import {
+  adaptNavigationTheme,
   MD3DarkTheme,
   MD3LightTheme,
-  PaperProvider,
-  adaptNavigationTheme
+  PaperProvider
 } from 'react-native-paper';
-import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '../firebase';
-import { useRouter, useSegments } from 'expo-router';
 
 import { useColorScheme } from '@/components/useColorScheme';
-import { registerForPushNotificationsAsync } from '../utils/notificationService';
 import Colors from '@/constants/Colors';
+import { registerForPushNotificationsAsync } from '../utils/notificationService';
 
 const { LightTheme: NavLightTheme, DarkTheme: NavDarkTheme } = adaptNavigationTheme({
   reactNavigationLight: NavigationDefaultTheme,
@@ -98,6 +97,10 @@ SplashScreen.setOptions({
 function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    'SpaceMono-Bold': require('../assets/fonts/SpaceMono-Bold.ttf'),
+    'SpaceMono-Italic': require('../assets/fonts/SpaceMono-Italic.ttf'),
+    'SpaceMono-BoldItalic': require('../assets/fonts/SpaceMono-BoldItalic.ttf'),
+    'Inter': require('../assets/fonts/Inter-VariableFont_opsz,wght.ttf'),
     ...FontAwesome.font,
   });
 
@@ -125,7 +128,7 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const paperTheme = colorScheme === 'dark' ? CustomPaperDarkTheme : CustomPaperLightTheme;
   const navTheme = colorScheme === 'dark' ? CustomNavDarkTheme : CustomNavLightTheme;
-  
+
   const segments = useSegments();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
