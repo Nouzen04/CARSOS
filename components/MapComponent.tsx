@@ -21,6 +21,7 @@ const MapComponent = ({ bengkelLocation, driverLocation, bengkelName }: MapCompo
             }}
             scrollEnabled={false}
             zoomEnabled={false}
+            loadingEnabled={true}
         >
             <Marker
                 coordinate={{
@@ -29,12 +30,14 @@ const MapComponent = ({ bengkelLocation, driverLocation, bengkelName }: MapCompo
                 }}
                 title={bengkelName}
                 pinColor="#E31E24"
+                tracksViewChanges={false}
             />
             {driverLocation && (
                 <Marker
                     coordinate={driverLocation}
                     title="You Are Here"
                     pinColor="#2196F3"
+                    tracksViewChanges={false}
                 />
             )}
         </MapView>

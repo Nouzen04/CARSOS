@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Image, ImageStyle, StyleProp } from 'react-native';
+import { ImageStyle, StyleProp } from 'react-native';
+import { Image } from 'expo-image';
 import { getDownloadURL, ref } from 'firebase/storage';
 import { storage } from '../firebase';
 
@@ -66,21 +67,19 @@ export function WorkshopImage({
     };
   }, [profilePicture, workshopId]);
 
-  if (useDefault || !uri) {
-    return (
-      <Image
-        source={DEFAULT_WORKSHOP_IMAGE}
-        style={style}
-        resizeMode={resizeMode}
-      />
-    );
-  }
+  // Map react-native resizeMode to expo-image contentFit
+  const contentFit = resizeMode === 'stretch' 
+    ? 'fill' 
+    : (resizeMode === 'center' ? 'none' : (resizeMode === 'repeat' ? 'cover' : resizeMode));
 
   return (
     <Image
-      source={{ uri }}
-      style={style}
-      resizeMode={resizeMode}
+      source={useDefault || !uri ? DEFAULT_WORKSHOP_IMAGE : { uri }}
+      style={style as any}
+      contentFit={contentFit}
+      placeholder={DEFAULT_WORKSHOP_IMAGE}
+      transition={200}
+      cachePolicy="disk"
       onError={() => {
         setUri(null);
         setUseDefault(true);

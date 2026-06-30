@@ -107,9 +107,7 @@ export default function TabLayout() {
   }, []);
 
   const handleSearch = (query: string) => {
-    if (query.trim()) {
-      setClicked(false);
-    }
+    router.setParams({ search: query });
   };
 
   return (
@@ -120,7 +118,6 @@ export default function TabLayout() {
           tabBarInactiveTintColor: '#94a3b8',
           tabBarHideOnKeyboard: Platform.OS === 'android' ? true : false,
 
-          // iOS touch fix: ensure tab bar is on top and takes touches
           tabBarStyle: [
             {
               height: 60 + insets.bottom,
@@ -142,6 +139,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="menuP"
           options={{
+            headerShown: true,
             headerTitle: clicked ? '' : 'Explore',
             tabBarLabel: 'Explore',
             tabBarIcon: ({ color }) => <Feather name="search" size={24} color={color} />,
@@ -161,6 +159,7 @@ export default function TabLayout() {
                     if (clicked) {
                       setClicked(false);
                       setSearchPhrase('');
+                      handleSearch('');
                     } else {
                       setClicked(true);
                     }
@@ -176,7 +175,6 @@ export default function TabLayout() {
             ),
           }}
         />
-
         <Tabs.Screen
           name="notificationP"
           options={{
@@ -186,7 +184,6 @@ export default function TabLayout() {
             tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
           }}
         />
-
         <Tabs.Screen
           name="sosP"
           options={{
@@ -199,7 +196,6 @@ export default function TabLayout() {
             ),
           }}
         />
-
         <Tabs.Screen
           name="aiP"
           options={{
@@ -210,21 +206,10 @@ export default function TabLayout() {
             ),
           }}
         />
-
         <Tabs.Screen
           name="bengkelP"
           options={{
             headerTitle: 'Workshop',
-            href: null,
-            tabBarStyle: { display: 'none' },
-          }}
-        />
-
-        <Tabs.Screen
-          name="profileP"
-          options={{
-            headerTitle: 'Settings',
-            tabBarLabel: 'Profile',
             href: null,
             tabBarStyle: { display: 'none' },
           }}

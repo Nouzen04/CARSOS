@@ -2,7 +2,7 @@ import { ModernCard } from '@/components/ModernCard';
 import { WorkshopImage } from '@/components/WorkshopImage';
 import Colors from '@/constants/Colors';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -18,6 +18,7 @@ const SERVICES = [
 ];
 
 export default function PemanduHomeScreen() {
+  const { search } = useLocalSearchParams<{ search?: string }>();
   const [workshops, setWorkshops] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
@@ -54,12 +55,25 @@ export default function PemanduHomeScreen() {
   };
 
   const filteredWorkshops = workshops.filter((workshop) => {
-    if (!selectedServiceId) return true;
-    if (selectedServiceId === '1') return workshop.selectedServices?.includes(2);
-    if (selectedServiceId === '2') return workshop.selectedServices?.includes(1);
-    if (selectedServiceId === '3') return workshop.selectedServices?.includes(1) || workshop.selectedServices?.includes(4);
-    if (selectedServiceId === '4') return workshop.selectedServices?.includes(4);
-    return true;
+    // 1. Service filter
+    let matchesService = true;
+    if (selectedServiceId) {
+      if (selectedServiceId === '1') matchesService = workshop.selectedServices?.includes(2);
+      else if (selectedServiceId === '2') matchesService = workshop.selectedServices?.includes(1);
+      else if (selectedServiceId === '3') matchesService = workshop.selectedServices?.includes(1) || workshop.selectedServices?.includes(4);
+      else if (selectedServiceId === '4') matchesService = workshop.selectedServices?.includes(4);
+    }
+
+    // 2. Search query filter
+    let matchesSearch = true;
+    if (search) {
+      const queryLower = search.toLowerCase();
+      const nameMatch = workshop.name?.toLowerCase().includes(queryLower);
+      const addressMatch = workshop.address?.toLowerCase().includes(queryLower);
+      matchesSearch = !!(nameMatch || addressMatch);
+    }
+
+    return matchesService && matchesSearch;
   });
 
   return (
