@@ -15,7 +15,9 @@ const JobCard = ({ job, type, workshopLocation }: { job: any, type: 'incoming' |
     const handleStatusUpdate = async (newStatus: string) => {
         try {
             await updateDoc(doc(db, 'service_requests', job.id), {
-                status: newStatus
+                status: newStatus,
+                readByPemandu: false,
+                dismissedByPemandu: false
             });
 
             // Send push notification to the driver (pemandu)
@@ -192,7 +194,7 @@ export default function BengkelHome() {
                 const newRequests = pendingList.length - prevPendingCount.current;
                 Alert.alert("New Request", `You have ${newRequests} new service request(s)!`);
             }
-            
+
             isInitialLoad.current = false;
             prevPendingCount.current = pendingList.length;
 

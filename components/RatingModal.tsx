@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { Modal, Portal, Text, TextInput, Button, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { db, auth } from '../firebase';
-import { addDoc, collection, doc, serverTimestamp, runTransaction, increment, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, runTransaction, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { useState } from 'react';
+import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Button, IconButton, Modal, Portal, Text, TextInput } from 'react-native-paper';
+import { auth, db } from '../firebase';
 
 interface RatingModalProps {
   visible: boolean;
@@ -35,11 +35,11 @@ export const RatingModal = ({ visible, onClose, request, onSuccess }: RatingModa
       await runTransaction(db, async (transaction) => {
         // 1. Create the rating document
         const ratingRef = collection(db, 'ratings');
-        
+
         // 2. Update workshop document
         const workshopRef = doc(db, 'users', request.bengkelID);
         const workshopSnap = await transaction.get(workshopRef);
-        
+
         if (!workshopSnap.exists()) {
           throw new Error("Workshop does not exist!");
         }
@@ -47,22 +47,11 @@ export const RatingModal = ({ visible, onClose, request, onSuccess }: RatingModa
         const data = workshopSnap.data();
         const currentTotalRating = data.totalRating || 0;
         const currentReviewCount = data.reviewCount || 0;
-        
+
         const newTotalRating = currentTotalRating + rating;
         const newReviewCount = currentReviewCount + 1;
         const newAverageRating = Number((newTotalRating / newReviewCount).toFixed(1));
 
-        // Perform the updates
-        transaction.update(workshopRef, {
-          totalRating: newTotalRating,
-          reviewCount: newReviewCount,
-          rating: newAverageRating
-        });
-
-        // Add the rating summary to the actual rating collection (outside transaction for simplicity or inside if needed)
-        // Note: transaction.set for a NEW doc with custom ID is possible, 
-        // but for auto-ID we usually do it separately unless we need strict atomicity across collections.
-        // We'll add the rating record separately to keep transaction light.
       });
 
       // Part 2: Save the detailed rating record
@@ -76,7 +65,7 @@ export const RatingModal = ({ visible, onClose, request, onSuccess }: RatingModa
       });
 
       // Part 3: Update the service request to reflect it's been rated
-      await updateDoc(doc(db, 'service_requests', request.id), { 
+      await updateDoc(doc(db, 'service_requests', request.id), {
         rated: true,
         rating: rating,
         readByPemandu: true,
@@ -96,27 +85,28 @@ export const RatingModal = ({ visible, onClose, request, onSuccess }: RatingModa
 
   return (
     <Portal>
-      <Modal 
-        visible={visible} 
-        onDismiss={onClose} 
+      <Modal
+        visible={visible}
+        onDismiss={onClose}
         contentContainerStyle={styles.container}
       >
-        <IconButton 
-          icon="close" 
-          size={24} 
-          onPress={onClose} 
-          style={styles.closeBtn} 
+        <IconButton
+          icon="close"
+          size={24}
+          onPress={onClose}
+          style={styles.closeBtn}
+          iconColor='#FF0000'
         />
         <Text variant="headlineSmall" style={styles.title}>Rate {request.workshopName}</Text>
         <Text variant="bodyMedium" style={styles.subtitle}>How was your experience with this workshop?</Text>
-        
+
         <View style={styles.starsContainer}>
           {[1, 2, 3, 4, 5].map((star) => (
             <TouchableOpacity key={star} onPress={() => setRating(star)}>
-              <MaterialCommunityIcons 
-                name={star <= rating ? "star" : "star-outline"} 
-                size={40} 
-                color={star <= rating ? "#f59e0b" : "#cbd5e1"} 
+              <MaterialCommunityIcons
+                name={star <= rating ? "star" : "star-outline"}
+                size={40}
+                color={star <= rating ? "#f59e0b" : "#cbd5e1"}
               />
             </TouchableOpacity>
           ))}
@@ -134,9 +124,9 @@ export const RatingModal = ({ visible, onClose, request, onSuccess }: RatingModa
           activeOutlineColor="#3b82f6"
         />
 
-        <Button 
-          mode="contained" 
-          onPress={handleSubmit} 
+        <Button
+          mode="contained"
+          onPress={handleSubmit}
           loading={submitting}
           disabled={submitting}
           style={styles.submitBtn}
@@ -164,6 +154,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontWeight: 'bold',
+    marginTop: 20,
     marginBottom: 8,
     textAlign: 'center',
   },

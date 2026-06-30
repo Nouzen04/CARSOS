@@ -158,6 +158,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="notificationP"
           options={{
+            headerShown: false,
             headerTitle: 'Inbox',
             tabBarLabel: 'Inbox',
             tabBarIcon: ({ color }) => <Feather name="mail" size={24} color={color} />,

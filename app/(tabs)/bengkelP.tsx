@@ -249,7 +249,6 @@ export default function infoBengkel() {
                         ))}
                     </View>
                 </View>
-                <View style={{ height: 20 }} />
             </View>
 
             {/* Bottom Action Bar */}
@@ -300,7 +299,7 @@ const styles = StyleSheet.create({
         marginTop: -30,
         paddingHorizontal: 20,
         paddingTop: 30,
-        paddingBottom: 100, // Space for footer
+        paddingBottom: 20,
     },
     headerRow: {
         flexDirection: 'row',
@@ -355,7 +354,8 @@ const styles = StyleSheet.create({
     },
     infoRow: {
         flexDirection: 'row',
-        marginBottom: 16,
+        marginBottom: 8,
+        marginTop: 12,
     },
     iconCircle: {
         width: 36,
@@ -378,8 +378,7 @@ const styles = StyleSheet.create({
     infoValue: {
         fontSize: 14,
         color: '#333',
-        lineHeight: 20,
-        marginBottom: 12,
+        marginBottom: 8,
     },
     mapSection: {
         height: 180,
@@ -388,7 +387,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         marginTop: 8,
         borderWidth: 1,
-        borderColor: '#eee',
+        borderColor: '#b7b7b7ff',
     },
     map: {
         ...StyleSheet.absoluteFillObject,
@@ -439,10 +438,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#eee',
     },
     footer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         backgroundColor: 'white',
         flexDirection: 'row',
         padding: 20,
