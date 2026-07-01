@@ -27,6 +27,6 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
     padding: 20,
-    backgroundColor: '#eeecf7', // This will be overridden by Themed View if not specified
+    backgroundColor: 'rgb(235, 245, 253)', // This will be overridden by Themed View if not specified
   },
 });

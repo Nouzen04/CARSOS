@@ -2,12 +2,13 @@ import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Href, Tabs, router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import React from 'react';
 import {
   Alert,
-  Image,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
   View
@@ -111,7 +112,9 @@ export default function TabLayout() {
   };
 
   return (
-    <View style={{ flex: 1, pointerEvents: 'box-none' }}>
+    <View style={{ flex: 1, pointerEvents: 'box-none', }}>
+      <View style={[styles.statusBarBackground, { height: insets.top }]} />
+      <StatusBar style="dark" />
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: Colors[(colorScheme ?? 'light') as keyof typeof Colors].tint,
@@ -122,6 +125,7 @@ export default function TabLayout() {
           options={{
             headerShown: true,
             headerTitle: '' ,
+            headerStyle: { backgroundColor: '#ffffff', height: 100, borderBottomWidth: 0 },
             tabBarLabel: 'Home',
             tabBarIcon: ({ color }) => <Feather name="search" size={24} color={color} />,
             headerRight: () => (
@@ -156,7 +160,7 @@ export default function TabLayout() {
             ),
             headerLeft: () => (
               <View style={{ paddingLeft: 15 }}>
-                <Image source={require('C:\\Users\\Win10\\CARSOS\\assets\\images\\iconlogo.png')} style={{ width: 100, height: 40 }} />
+                <Text style={styles.headerTitle}>CARSOS</Text>
               </View>
             ),
           }}
@@ -197,6 +201,7 @@ export default function TabLayout() {
           name="bengkelP"
           options={{
             headerTitle: 'Workshop',
+            headerShown: false,
             href: null,
             tabBarStyle: { display: 'none' },
           }}
@@ -205,6 +210,7 @@ export default function TabLayout() {
           name="profileP"
           options={{
             headerTitle: 'Profile',
+            headerShown: false,
             href: null,
             tabBarStyle: { display: 'none' },
           }}
@@ -216,13 +222,13 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     height: 100,
   },
   headerTitle: {
-    fontWeight: 'bold',
     fontSize: 22,
     color: '#0f172a',
+    fontFamily: 'SpaceMono',
   },
   headerRight: {
     flexDirection: 'row',
@@ -236,6 +242,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 12,
     justifyContent: 'center',
+  },
+  statusBarBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+    zIndex: 10,
   },
   input: {
     fontSize: 14,

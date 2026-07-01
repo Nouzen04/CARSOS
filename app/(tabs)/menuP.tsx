@@ -189,7 +189,7 @@ export default function PemanduHomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F8FF',
+    backgroundColor: '#F8FAFC',
   },
   content: {
     padding: 16,
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   serviceName: {
     fontSize: 12,
         marginTop: 8,
-        color: '#333',
+        color: '#001453',
         textAlign: 'center',
         fontWeight: '500',
   },
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
   bengkelCard: {
     marginBottom: 28,
     borderWidth: 1,
-    borderColor: '#462ef957',
+    borderColor: '#b2d1f78b',
     overflow: 'hidden',
   },
   bengkelContent: {
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   },
   bengkelName: {
     fontFamily: 'Inter-Bold',
-    color: '#1e293b',
+    color: '#001453',
     flex: 1,
     marginRight: 8,
     fontSize: 20,
