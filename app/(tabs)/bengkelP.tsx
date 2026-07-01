@@ -13,7 +13,7 @@ import { formatDistance, getDirectionsUrl, getDistance, getGoogleMapsUrl } from 
 
 const { width } = Dimensions.get('window');
 
-const SERVICES = [
+export const SERVICES = [
     { id: 1, name: 'Full Service', icon: 'settings' },
     { id: 2, name: 'Tire Change', icon: 'disc' },
     { id: 3, name: 'Brake Repair', icon: 'tool' },
@@ -269,7 +269,7 @@ export default function infoBengkel() {
     );
 }
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f8f9fa',

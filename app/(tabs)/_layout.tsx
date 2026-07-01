@@ -6,6 +6,7 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import React from 'react';
 import {
   Alert,
+  Image,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -67,7 +68,7 @@ export default function TabLayout() {
       });
       setUnreadCount(unread.length);
 
-      snapshot.docChanges().forEach((change) => {
+      (snapshot.docChanges()).forEach((change) => {
         if (change.type === 'modified') {
           const data = change.doc.data() as any;
           const oldStatus = prevStatusesRef.current[change.doc.id];
@@ -97,7 +98,7 @@ export default function TabLayout() {
         prevStatusesRef.current[change.doc.id] = (change.doc.data() as any).status;
       });
 
-      snapshot.docs.forEach((doc) => {
+      (snapshot.docs).forEach((doc) => {
         prevStatusesRef.current[doc.id] = (doc.data() as any).status;
       });
     });
@@ -120,8 +121,8 @@ export default function TabLayout() {
           name="menuP"
           options={{
             headerShown: true,
-            headerTitle: clicked ? '' : 'Explore',
-            tabBarLabel: 'Explore',
+            headerTitle: '' ,
+            tabBarLabel: 'Home',
             tabBarIcon: ({ color }) => <Feather name="search" size={24} color={color} />,
             headerRight: () => (
               <View style={styles.headerRight}>
@@ -151,6 +152,11 @@ export default function TabLayout() {
                 >
                   <Feather name="user" size={20} color="#0f172a" />
                 </TouchableOpacity>
+              </View>
+            ),
+            headerLeft: () => (
+              <View style={{ paddingLeft: 15 }}>
+                <Image source={require('C:\\Users\\Win10\\CARSOS\\assets\\images\\iconlogo.png')} style={{ width: 100, height: 40 }} />
               </View>
             ),
           }}
@@ -191,6 +197,14 @@ export default function TabLayout() {
           name="bengkelP"
           options={{
             headerTitle: 'Workshop',
+            href: null,
+            tabBarStyle: { display: 'none' },
+          }}
+        />
+        <Tabs.Screen
+          name="profileP"
+          options={{
+            headerTitle: 'Profile',
             href: null,
             tabBarStyle: { display: 'none' },
           }}
@@ -239,6 +253,7 @@ const styles = StyleSheet.create({
   tabBarLabel: {
     fontSize: 12,
     fontWeight: '500',
+    fontFamily: 'Inter',
   },
   sosIconContainer: {
     width: 40,

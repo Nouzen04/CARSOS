@@ -1,5 +1,4 @@
-import React from 'react';
-import { StyleSheet, ViewStyle } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { View, ViewProps } from './Themed';
 
 interface ModernCardProps extends ViewProps {
@@ -28,7 +27,6 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
     padding: 20,
-    backgroundColor: '#ffffff', // This will be overridden by Themed View if not specified
-    shadowColor: '#000',
+    backgroundColor: '#eeecf7', // This will be overridden by Themed View if not specified
   },
 });

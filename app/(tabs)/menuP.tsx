@@ -5,8 +5,7 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Surface, Text } from 'react-native-paper';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { db } from '../../firebase';
 
@@ -77,18 +76,18 @@ export default function PemanduHomeScreen() {
   });
 
   return (
+    
     <ScrollView 
       style={styles.container} 
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 60 + insets.bottom + 20 }}
-      // iOS: avoid any accidental overlay stacking over the tab bar area
       keyboardShouldPersistTaps="handled"
       pointerEvents="auto"
     >
       <View style={styles.content}>
         <View style={styles.welcomeSection}>
-          <Text variant="headlineSmall" style={styles.welcomeTitle}>Need assistance?</Text>
-          <Text variant="bodyMedium" style={styles.welcomeSubtitle}>Select a service for immediate help</Text>
+          <Text  style={styles.welcomeTitle}>Need Assistance?</Text>
+          <Text  style={styles.welcomeSubtitle}>Select a service for immediate help</Text>
         </View>
 
         <View style={styles.serviceGrid}>
@@ -101,22 +100,22 @@ export default function PemanduHomeScreen() {
                 onPress={() => handleServicePress(service.id)}
                 style={styles.serviceItem}
               >
-                <Surface 
+                <View 
                   style={[
                     styles.serviceIconContainer,
-                    isSelected && { 
-                      backgroundColor: service.color + '15', 
-                      borderWidth: 2, 
+                    {
+                      transform: [{ scale: isSelected ? 1.05 : 1 }],
+                    },
+                    isSelected && {
+                      backgroundColor: service.color + '15',
+                      borderWidth: 2,
                       borderColor: service.color,
-                      transform: [{ scale: 1.05 }]
                     }
-                  ]} 
-                  elevation={isSelected ? 0 : 1}
+                  ]}  
                 >
                   <MaterialCommunityIcons name={service.icon as any} size={28} color={service.color} />
-                </Surface>
+                </View>
                 <Text 
-                  variant="labelMedium" 
                   style={[
                     styles.serviceLabel, 
                     isSelected && { color: service.color, fontWeight: 'bold' }
@@ -130,7 +129,7 @@ export default function PemanduHomeScreen() {
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text variant="titleLarge" style={styles.sectionTitle}>
+          <Text  style={styles.sectionTitle}>
             {selectedServiceId 
               ? `Nearby for ${SERVICES.find(s => s.id === selectedServiceId)?.title}` 
               : 'Nearby Workshops'}
@@ -141,8 +140,7 @@ export default function PemanduHomeScreen() {
           <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 20 }} />
         ) : filteredWorkshops.length > 0 ? (
           filteredWorkshops.map((workshop) => (
-            <View key={workshop.id} style={styles.shadowWrapper}>
-            <ModernCard key={workshop.id} style={styles.bengkelCard} elevation={2}>
+            <ModernCard key={workshop.id} style={styles.bengkelCard}>
               <TouchableOpacity
                 activeOpacity={0.9}
                 style={styles.bengkelContent}
@@ -156,7 +154,7 @@ export default function PemanduHomeScreen() {
                 />
                 <View style={styles.bengkelDetails}>
                   <View style={styles.bengkelTitleRow}>
-                    <Text variant="titleLarge" style={styles.bengkelName}>{workshop.name}</Text>
+                    <Text  style={styles.bengkelName}>{workshop.name}</Text>
                     <View style={styles.ratingBadge}>
                       <MaterialCommunityIcons name="star" size={14} color="#f59e0b" />
                       <Text style={styles.ratingText}>{workshop.rating ?? '0.0'}</Text>
@@ -164,15 +162,18 @@ export default function PemanduHomeScreen() {
                   </View>
 
                   <View style={styles.bengkelInfoRow}>
-                    <Feather name="map-pin" size={14} color="#64748b" />
-                    <Text variant="bodySmall" style={styles.bengkelInfoText}>
+                    <Feather name="map-pin" size={11} color="#64748b" />
+                    <Text  
+                    style={styles.bengkelInfoText}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    >
                       {workshop.address || 'Address not available'}
                     </Text>
                   </View>
                 </View>
               </TouchableOpacity>
-            </ModernCard>
-            </View>
+              </ModernCard>
           ))
         ) : (
           <View style={styles.emptyState}>
@@ -188,7 +189,7 @@ export default function PemanduHomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F7F8FF',
   },
   content: {
     padding: 16,
@@ -197,11 +198,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   welcomeTitle: {
-    fontWeight: 'bold',
-    color: '#1e293b',
+    color: '#001453',
+    fontSize: 30,
+    fontFamily: 'SpaceMono-Bold',
   },
   welcomeSubtitle: {
     color: '#64748b',
+    fontFamily: 'Inter',
     marginTop: 4,
   },
   serviceGrid: {
@@ -209,55 +212,68 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 24,
   },
+  serviceName: {
+    fontSize: 12,
+        marginTop: 8,
+        color: '#333',
+        textAlign: 'center',
+        fontWeight: '500',
+  },
   serviceItem: {
     alignItems: 'center',
     flex: 1,
-  },
-  serviceIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-  },
-  serviceLabel: {
-    marginTop: 8,
-    color: '#64748b',
-  },
-  sectionHeader: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontWeight: 'bold',
-    color: '#1e293b',
-  },
-  shadowWrapper: {
     shadowColor: '#000000', 
     shadowOffset: {
       width: 0,
       height: 4,                
     },
     shadowOpacity: 0.3,        
-    shadowRadius: 5,            
-    elevation: 6,               
-    padding: 16,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  serviceIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#462ef957',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F7F8FF',
+  },
+  serviceLabel: {
+    marginTop: 8,
+    color: '#64748b',
+    fontFamily: 'Inter',
+    fontSize: 11,
+  },
+  sectionHeader: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontFamily: 'SpaceMono',
+    fontSize: 22,
+    color: '#001453',
   },
   bengkelCard: {
-    marginBottom: 16,
-    borderRadius: 16,
+    marginBottom: 28,
+    borderWidth: 1,
+    borderColor: '#462ef957',
     overflow: 'hidden',
-    backgroundColor: '#ffffff',
   },
   bengkelContent: {
     flexDirection: 'column',
   },
   bengkelImage: {
-    width: '100%',
+    width: '99%',
     height: 160,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    alignSelf: 'center',
   },
   bengkelDetails: {
     padding: 16,
+    borderRadius: 20,
   },
   bengkelTitleRow: {
     flexDirection: 'row',
@@ -266,12 +282,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   bengkelName: {
-    fontWeight: 'bold',
+    fontFamily: 'Inter-Bold',
     color: '#1e293b',
     flex: 1,
     marginRight: 8,
+    fontSize: 20,
   },
   ratingBadge: {
+    position: 'absolute',
+    right: 0,
+    top: -160,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fef3c7',
@@ -284,6 +304,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#d97706',
     marginLeft: 4,
+    fontFamily: 'Inter',
   },
   bengkelInfoRow: {
     flexDirection: 'row',
@@ -293,6 +314,8 @@ const styles = StyleSheet.create({
     color: '#64748b',
     marginLeft: 6,
     flex: 1,
+    fontSize: 11,
+    fontFamily: 'Inter',
   },
   emptyState: {
     alignItems: 'center',
