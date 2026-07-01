@@ -25,7 +25,7 @@ export default function TabThreeScreen() {
     ];
 
     return (
-        <ScrollView style={styles.scrollView} contentContainerStyle={[styles.contentContainer, {paddingBottom: 60 + insets.bottom + 20 }]}>  
+        <ScrollView style={styles.scrollView} contentContainerStyle={[styles.contentContainer, { paddingBottom: 60 + insets.bottom + 20 }, { paddingTop: insets.top }]}>
             <View style={styles.header}>
                 <View style={styles.headerIconContainer}>
                     <MaterialCommunityIcons name="alert-decagram" size={32} color="#EF4444" />
@@ -66,7 +66,7 @@ export default function TabThreeScreen() {
 const styles = StyleSheet.create({
     scrollView: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
+        backgroundColor: '#FEF2F2',
     },
     contentContainer: {
         padding: 16,
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 16,
         marginBottom: 24,
-        borderWidth: 1,
+        borderBottomWidth: 1,
         borderColor: '#FEE2E2',
     },
     headerIconContainer: {
@@ -87,6 +87,9 @@ const styles = StyleSheet.create({
         height: 56,
         borderRadius: 28,
         backgroundColor: 'white',
+        marginTop: 8,
+        borderWidth: 1,
+        borderColor: '#FEE2E2',
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 2,
@@ -102,7 +105,7 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 20,
-        fontWeight: 'bold',
+        fontFamily: 'SpaceMono-Bold',
         color: '#991B1B',
     },
     subtitle: {
@@ -110,9 +113,11 @@ const styles = StyleSheet.create({
         color: '#B91C1C',
         opacity: 0.8,
         marginTop: 2,
+        fontFamily: 'Inter',
     },
     sosGrid: {
         gap: 12,
+        backgroundColor: '#FEF2F2',
     },
     card: {
         backgroundColor: '#ecf6fdff',
@@ -147,15 +152,16 @@ const styles = StyleSheet.create({
     },
     cardTitle: {
         fontSize: 15,
-        fontWeight: '600',
         color: '#1E293B',
         lineHeight: 20,
+        fontFamily: 'SpaceMono-Bold',
     },
     cardNumber: {
         fontSize: 14,
         color: '#64748B',
         marginTop: 2,
         fontWeight: '500',
+        fontFamily: 'Inter',
     },
     callIconContainer: {
         width: 36,

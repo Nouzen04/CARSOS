@@ -211,11 +211,11 @@ export default function AIChatScreen() {
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
             style={styles.container}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? TAB_BAR_HEIGHT + 50 : 20}
+            keyboardVerticalOffset={Platform.OS === 'ios' ?  0 :  insets.bottom}
             pointerEvents="box-none"
         >
             {/* Header Container */}
-            <View style={styles.header}>
+            <View style={[styles.header,{paddingTop: Platform.OS === 'ios' ? 80 : 20}]}>
                 <View style={styles.botIcon}>
                     <MaterialIcons name="auto-awesome" size={20} color="white" />
                 </View>
@@ -227,7 +227,7 @@ export default function AIChatScreen() {
                 ref={flatListRef}
                 data={messages}
                 renderItem={renderMessage}
-                contentContainerStyle={[styles.messageList, { paddingBottom: 40 + insets.bottom + 60 }]}
+                contentContainerStyle={[styles.messageList]}
                 ListHeaderComponent={() => (
                     <View style={styles.quickDiagnosisGrid}>
                         <Text style={styles.sectionTitle}>Quick Diagnosis</Text>
@@ -255,8 +255,7 @@ export default function AIChatScreen() {
                 </View>
             )}
 
-            {/* 3. DYNAMICALLY PUSH CONTAINER UP BASED ON TAB BAR HEIGHT */}
-            <View style={[styles.inputContainer, { marginBottom: TAB_BAR_HEIGHT + 6 }]}>
+            <View style={[styles.inputContainer]}>
                 <TextInput
                     style={styles.input}
                     placeholder="Type what's happening..."
@@ -281,24 +280,21 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingTop: Platform.OS === 'ios' ? 50 : 20,
         paddingBottom: 16,
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#f1f5f9',
+        backgroundColor: '#f8fafc',
     },
     botIcon: {
         width: 36,
         height: 36,
-        borderRadius: 18,
+        borderRadius: 15,
         backgroundColor: '#2f95dc',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
     },
     headerTitle: {
-        fontSize: 18,
-        fontWeight: '700',
+        fontSize: 20,
+        fontFamily: 'SpaceMono-Bold',
         color: '#0f172a',
     },
     messageList: {
@@ -308,10 +304,11 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     sectionTitle: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: '600',
         color: '#64748b',
         marginBottom: 8,
+        fontFamily: 'Inter',
     },
     pillContainer: {
         flexDirection: 'row',
@@ -331,6 +328,7 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: '#334155',
         fontWeight: '500',
+        fontFamily: 'Inter',
     },
     messageBubble: {
         maxWidth: '85%',
@@ -352,6 +350,7 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 15,
         lineHeight: 22,
+        fontFamily: 'Inter',
     },
     feedbackContainer: {
         marginTop: 12,
@@ -363,6 +362,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#64748b',
         marginBottom: 6,
+        fontFamily: 'Inter',
     },
     feedbackButtons: {
         flexDirection: 'row',
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     },
     input: {
         flex: 1,
-        backgroundColor: '#f1f5f9',
+        backgroundColor: 'rgba(227, 226, 226, 0.5)',
         borderRadius: 20,
         paddingHorizontal: 16,
         paddingVertical: 8,

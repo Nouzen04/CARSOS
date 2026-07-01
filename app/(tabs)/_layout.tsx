@@ -124,8 +124,8 @@ export default function TabLayout() {
           name="menuP"
           options={{
             headerShown: true,
-            headerTitle: '' ,
-            headerStyle: { backgroundColor: '#ffffff', height: 100, borderBottomWidth: 0 },
+            headerTitle: '',
+            headerStyle: { backgroundColor: '#ffffff', height: 60 + insets.top, borderBottomWidth: 0, },
             tabBarLabel: 'Home',
             tabBarIcon: ({ color }) => <Feather name="search" size={24} color={color} />,
             headerRight: () => (
@@ -179,6 +179,7 @@ export default function TabLayout() {
           name="sosP"
           options={{
             headerTitle: 'Emergency',
+            headerShown: false,
             tabBarLabel: '',
             tabBarIcon: () => (
               <Surface style={styles.sosIconContainer} elevation={2} pointerEvents="none">
@@ -191,6 +192,7 @@ export default function TabLayout() {
           name="aiP"
           options={{
             headerTitle: 'AI Assistant',
+            headerShown: false,
             tabBarLabel: 'Support',
             tabBarIcon: ({ color }) => (
               <MaterialCommunityIcons name="robot-outline" size={24} color={color} />

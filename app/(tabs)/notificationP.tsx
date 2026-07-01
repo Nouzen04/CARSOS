@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   scrollView: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F8FAFC',
   },
   pageTitle: {
     fontSize: 24,

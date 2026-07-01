@@ -307,8 +307,8 @@ export const styles = StyleSheet.create({
     },
     title: {
         fontSize: 26,
-        fontWeight: 'bold',
         color: '#001453',
+        fontFamily: 'SpaceMono-Bold',
         flex: 1,
     },
     ratingContainer: {
@@ -323,6 +323,7 @@ export const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: 'bold',
         marginLeft: 4,
+        fontFamily: 'Inter',
     },
     reviewCount: {
         fontWeight: 'normal',
@@ -344,6 +345,7 @@ export const styles = StyleSheet.create({
         fontSize: 12,
         color: '#475273',
         fontWeight: '500',
+        fontFamily: 'Inter',
     },
     infoSection: {
         marginTop: 24,
@@ -373,11 +375,13 @@ export const styles = StyleSheet.create({
         fontSize: 12,
         color: '#475273',
         marginBottom: 2,
+        fontFamily: 'Inter',
     },
     infoValue: {
         fontSize: 14,
         color: '#333',
         marginBottom: 8,
+        fontFamily: 'Inter',
     },
     mapSection: {
         height: 180,
@@ -399,14 +403,15 @@ export const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
+        fontFamily: 'SpaceMono-Bold',
         color: '#001453',
         marginBottom: 12,
     },
     description: {
-        fontSize: 15,
+        fontSize: 13,
         color: '#555',
         lineHeight: 22,
+        fontFamily: 'Inter',
     },
     servicesGrid: {
         flexDirection: 'row',
@@ -438,6 +443,7 @@ export const styles = StyleSheet.create({
         color: '#333',
         textAlign: 'center',
         fontWeight: '500',
+        fontFamily: 'Inter',
     },
     photoList: {
         marginTop: 8,
@@ -487,5 +493,6 @@ export const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         fontSize: 16,
+        fontFamily: 'Inter',
     },
 });
