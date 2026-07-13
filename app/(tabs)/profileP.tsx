@@ -46,8 +46,8 @@ export default function PemanduProfile() {
       'Are you sure you want to log out?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Log Out', 
+        {
+          text: 'Log Out',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -67,13 +67,13 @@ export default function PemanduProfile() {
     try {
       const q = query(collection(db, 'users'), where('role', '==', 'bengkel'));
       const querySnapshot = await getDocs(q);
-      
+
       for (const workshopDoc of querySnapshot.docs) {
         const workshopId = workshopDoc.id;
         const scores = [5, 4, 5];
         const comments = ["Excellent!", "Good job", "Fast service"];
         let total = 0;
-        
+
         for (let i = 0; i < scores.length; i++) {
           await addDoc(collection(db, 'ratings'), {
             bengkelID: workshopId,
@@ -85,7 +85,7 @@ export default function PemanduProfile() {
           });
           total += scores[i];
         }
-        
+
         await updateDoc(doc(db, 'users', workshopId), {
           rating: Number((total / scores.length).toFixed(1)),
           totalRating: total,
@@ -116,9 +116,9 @@ export default function PemanduProfile() {
         style={styles.header}
       >
         <SafeAreaView style={styles.headerContent}>
-          <Avatar.Text 
-            size={80} 
-            label={userData?.name?.substring(0, 2).toUpperCase() || 'U'} 
+          <Avatar.Text
+            size={80}
+            label={userData?.name?.substring(0, 2).toUpperCase() || 'U'}
             style={styles.avatar}
             labelStyle={styles.avatarLabel}
           />
@@ -127,53 +127,56 @@ export default function PemanduProfile() {
         </SafeAreaView>
       </LinearGradient>
 
-      <ScrollView style={styles.body} showsVerticalScrollIndicator={false} contentContainerStyle={{
+      <ScrollView
+        style={styles.body}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
           paddingBottom: 60 + insets.bottom + 30
         }}>
         <ModernCard style={styles.infoCard} elevation={1}>
-           <Text variant="titleMedium" style={styles.sectionTitle}>Account Information</Text>
-           
-           <View style={styles.infoRow}>
-              <View style={styles.iconCircle}>
-                <Feather name="mail" size={18} color={Colors.light.primary} />
-              </View>
-              <View style={styles.infoTextContainer}>
-                <Text variant="labelSmall" style={styles.infoLabel}>Email Address</Text>
-                <Text variant="bodyLarge" style={styles.infoValue}>{userData?.email || auth.currentUser?.email}</Text>
-              </View>
-           </View>
+          <Text variant="titleMedium" style={styles.sectionTitle}>Account Information</Text>
 
-           <View style={styles.infoRow}>
-              <View style={styles.iconCircle}>
-                <Feather name="phone" size={18} color={Colors.light.primary} />
-              </View>
-              <View style={styles.infoTextContainer}>
-                <Text variant="labelSmall" style={styles.infoLabel}>Phone Number</Text>
-                <Text variant="bodyLarge" style={styles.infoValue}>{userData?.phone || 'Not provided'}</Text>
-              </View>
-           </View>
+          <View style={styles.infoRow}>
+            <View style={styles.iconCircle}>
+              <Feather name="mail" size={18} color={Colors.light.primary} />
+            </View>
+            <View style={styles.infoTextContainer}>
+              <Text variant="labelSmall" style={styles.infoLabel}>Email Address</Text>
+              <Text variant="bodyLarge" style={styles.infoValue}>{userData?.email || auth.currentUser?.email}</Text>
+            </View>
+          </View>
+
+          <View style={styles.infoRow}>
+            <View style={styles.iconCircle}>
+              <Feather name="phone" size={18} color={Colors.light.primary} />
+            </View>
+            <View style={styles.infoTextContainer}>
+              <Text variant="labelSmall" style={styles.infoLabel}>Phone Number</Text>
+              <Text variant="bodyLarge" style={styles.infoValue}>{userData?.phone || 'Not provided'}</Text>
+            </View>
+          </View>
         </ModernCard>
 
         <ModernCard style={styles.infoCard} elevation={1}>
-           <Text variant="titleMedium" style={styles.sectionTitle}>Settings</Text>
-           
-           <TouchableOpacity style={styles.menuItem}>
-              <MaterialCommunityIcons name="shield-check-outline" size={22} color="#64748b" />
-              <Text variant="bodyLarge" style={styles.menuItemText}>Security</Text>
-              <Feather name="chevron-right" size={20} color="#cbd5e1" />
-           </TouchableOpacity>
+          <Text variant="titleMedium" style={styles.sectionTitle}>Settings</Text>
 
-           <TouchableOpacity style={styles.menuItem}>
-              <MaterialCommunityIcons name="bell-outline" size={22} color="#64748b" />
-              <Text variant="bodyLarge" style={styles.menuItemText}>Notifications</Text>
-              <Feather name="chevron-right" size={20} color="#cbd5e1" />
-           </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem}>
+            <MaterialCommunityIcons name="shield-check-outline" size={22} color="#64748b" />
+            <Text variant="bodyLarge" style={styles.menuItemText}>Security</Text>
+            <Feather name="chevron-right" size={20} color="#cbd5e1" />
+          </TouchableOpacity>
 
-           <TouchableOpacity style={styles.menuItem}>
-              <MaterialCommunityIcons name="help-circle-outline" size={22} color="#64748b" />
-              <Text variant="bodyLarge" style={styles.menuItemText}>Support</Text>
-              <Feather name="chevron-right" size={20} color="#cbd5e1" />
-           </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem}>
+            <MaterialCommunityIcons name="bell-outline" size={22} color="#64748b" />
+            <Text variant="bodyLarge" style={styles.menuItemText}>Notifications</Text>
+            <Feather name="chevron-right" size={20} color="#cbd5e1" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem}>
+            <MaterialCommunityIcons name="help-circle-outline" size={22} color="#64748b" />
+            <Text variant="bodyLarge" style={styles.menuItemText}>Support</Text>
+            <Feather name="chevron-right" size={20} color="#cbd5e1" />
+          </TouchableOpacity>
         </ModernCard>
 
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
@@ -187,8 +190,8 @@ export default function PemanduProfile() {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.seedBtn} onPress={seedRatingData}>
-            <Feather name="database" size={16} color="#64748b" />
-            <Text variant="bodySmall" style={styles.seedText}>Seed Rating Data (Dev Only)</Text>
+          <Feather name="database" size={16} color="#64748b" />
+          <Text variant="bodySmall" style={styles.seedText}>Seed Rating Data (Dev Only)</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>

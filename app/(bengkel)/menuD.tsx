@@ -221,7 +221,7 @@ export default function BengkelHome() {
                 style={styles.header}
             >
                 <SafeAreaView style={styles.headerContent}>
-                    <Text variant="headlineSmall" style={styles.headerTitle}>Hi, {workshopData?.name}</Text>
+                    <Text variant="headlineSmall" style={styles.headerTitle}>Hi,{workshopData?.name}</Text>
                     <Text variant="bodyMedium" style={styles.headerSubtitle}>Manage your active requests</Text>
                 </SafeAreaView>
             </LinearGradient>

@@ -1,5 +1,7 @@
+import Colors from '@/constants/Colors';
 import Feather from '@expo/vector-icons/Feather';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Href, router } from 'expo-router';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -139,35 +141,42 @@ export default function BengkelProfile() {
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={{ flex: 1 }}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 100}>
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+            pointerEvents="box-none"
+        >
+            <LinearGradient
+                colors={[Colors.light.primary, Colors.light.secondary]}
+                style={styles.header}
+            >
+                <SafeAreaView style={styles.headerContent}>
+                    <TouchableOpacity
+                        style={styles.avatarWrapper}
+                        onPress={pickImage}
+                        disabled={uploading}
+                    >
+                        <View style={styles.avatarContainer}>
+                            {uploading ? (
+                                <ActivityIndicator color="#4630EB" />
+                            ) : userData?.profilePicture ? (
+                                <Image
+                                    source={{ uri: userData.profilePicture }}
+                                    style={styles.avatarImage}
+                                />
+                            ) : (
+                                <Feather name="settings" size={50} color="#666" />
+                            )}
+                        </View>
+                        <View style={styles.editBadge}>
+                            <Feather name="camera" size={14} color="#fff" />
+                        </View>
+                    </TouchableOpacity>
+                    <Text style={styles.name}>{userData?.name || 'Workshop Name'}</Text>
+                    <Text style={styles.role}>Workshop Account</Text>
+                </SafeAreaView>
+            </LinearGradient>
+
             <SafeAreaView style={styles.container}>
                 <ScrollView showsVerticalScrollIndicator={false}>
-                    <View style={styles.header}>
-                        <TouchableOpacity
-                            style={styles.avatarWrapper}
-                            onPress={pickImage}
-                            disabled={uploading}
-                        >
-                            <View style={styles.avatarContainer}>
-                                {uploading ? (
-                                    <ActivityIndicator color="#4630EB" />
-                                ) : userData?.profilePicture ? (
-                                    <Image
-                                        source={{ uri: userData.profilePicture }}
-                                        style={styles.avatarImage}
-                                    />
-                                ) : (
-                                    <Feather name="settings" size={50} color="#666" />
-                                )}
-                            </View>
-                            <View style={styles.editBadge}>
-                                <Feather name="camera" size={14} color="#fff" />
-                            </View>
-                        </TouchableOpacity>
-                        <Text style={styles.name}>{userData?.name || 'Workshop Name'}</Text>
-                        <Text style={styles.role}>Workshop Account</Text>
-                    </View>
-
                     <View style={styles.infoSection}>
                         <Text style={styles.sectionTitle}>Workshop Information</Text>
 
@@ -225,9 +234,15 @@ export default function BengkelProfile() {
                     </View>
 
                     <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                        <Feather name="log-out" size={20} color="#FF4B4B" />
-                        <Text style={styles.logoutText}>Log Out</Text>
+                        <LinearGradient
+                            colors={['#fee2e2', '#fee2e2']}
+                            style={styles.logoutGradient}
+                        >
+                            <Feather name="log-out" size={20} color="#FF4B4B" />
+                            <Text style={styles.logoutText}>Log Out</Text>
+                        </LinearGradient>
                     </TouchableOpacity>
+
                 </ScrollView>
             </SafeAreaView>
         </KeyboardAvoidingView>
@@ -237,8 +252,9 @@ export default function BengkelProfile() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f8f8',
-        padding: 20,
+        backgroundColor: '#edf3f9ff',
+        paddingHorizontal: 20,
+        paddingBottom: 0,
     },
     loadingContainer: {
         flex: 1,
@@ -246,9 +262,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     header: {
+        height: 260,
+        borderBottomLeftRadius: 40,
+        borderBottomRightRadius: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    headerContent: {
         alignItems: 'center',
         marginBottom: 30,
-        marginTop: 10,
+        marginTop: 55,
     },
     avatarWrapper: {
         position: 'relative',
@@ -281,17 +304,18 @@ const styles = StyleSheet.create({
         borderColor: '#fff',
     },
     name: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#333',
+        fontSize: 24,
+        color: '#ffffffff',
         textAlign: 'center',
+        fontFamily: 'SpaceMono-Bold'
     },
     role: {
-        fontSize: 14,
-        color: '#666',
-        marginTop: 4,
+        fontSize: 13,
+        color: '#ffffffff',
+        marginTop: 2,
         textTransform: 'uppercase',
         letterSpacing: 1,
+        fontFamily: 'Inter-Light'
     },
     infoSection: {
         backgroundColor: 'white',
@@ -305,13 +329,13 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     sectionTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
+        fontSize: 18,
+        color: '#001453',
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomColor: '#d4e2ffc7',
         paddingBottom: 5,
         flex: 1,
+        fontFamily: 'SpaceMono-Bold'
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -327,6 +351,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 15,
+        paddingTop: 4
     },
     infoContent: {
         marginLeft: 15,
@@ -336,32 +361,34 @@ const styles = StyleSheet.create({
         fontSize: 11,
         color: '#999',
         textTransform: 'uppercase',
+        fontFamily: 'Inter-Light'
     },
     infoValue: {
-        fontSize: 15,
+        fontSize: 13,
         color: '#333',
         fontWeight: '500',
+        fontFamily: 'Inter-Medium',
     },
     descriptionText: {
         fontSize: 14,
         color: '#555',
         lineHeight: 20,
+        fontFamily: 'Inter-Medium',
     },
     logoutButton: {
+        marginTop: 20,
+    },
+    logoutGradient: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#fff',
-        borderColor: '#eee',
-        borderWidth: 1,
-        padding: 15,
-        borderRadius: 15,
-        gap: 10,
-        marginBottom: 30,
+        paddingVertical: 16,
+        gap: 12,
+        borderRadius: 16,
     },
     logoutText: {
         color: '#FF4B4B',
         fontSize: 16,
-        fontWeight: 'bold',
+        fontFamily: 'Inter-Bold'
     },
 });
