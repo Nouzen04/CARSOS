@@ -240,6 +240,8 @@ const styles = StyleSheet.create({
   cardContainer: {
     width: '85%',
     marginBottom: 24,
+    borderRadius: 32,
+    backgroundColor: 'white',
     alignSelf: 'center',
     shadowColor: '#000000',
     shadowOffset: {
@@ -256,11 +258,6 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     padding: 16,
     paddingTop: 40,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
     position: 'relative',
   },
   cardUnread: {

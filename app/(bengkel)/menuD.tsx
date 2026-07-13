@@ -312,6 +312,8 @@ const styles = StyleSheet.create({
         padding: 0, // We'll use internal padding
         marginBottom: 16,
         overflow: 'hidden',
+        borderColor: '#1846a82a',
+        borderWidth: 1
     },
     cardHeader: {
         flexDirection: 'row',

@@ -141,42 +141,42 @@ export default function infoBengkel() {
     const DAY_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     function getOperatingSummary(bengkelData: any) {
-    const days: string[] = bengkelData?.operatingDays || [];
-    const hours = bengkelData?.operatingHours;
+        const days: string[] = bengkelData?.operatingDays || [];
+        const hours = bengkelData?.operatingHours;
 
-    if (!days.length || !hours) return null;
+        if (!days.length || !hours) return null;
 
-    // Build ordered list of { day, timeKey } for open days only
-    const entries = DAY_ORDER
-        .filter((d) => days.includes(d))
-        .map((day) => {
-        const time = hours.sameAllDays ? hours.common : hours.perDay?.[day];
-        return { day, timeKey: time ? `${time.open}-${time.close}` : null };
-        })
-        .filter((e) => e.timeKey);
+        // Build ordered list of { day, timeKey } for open days only
+        const entries = DAY_ORDER
+            .filter((d) => days.includes(d))
+            .map((day) => {
+                const time = hours.sameAllDays ? hours.common : hours.perDay?.[day];
+                return { day, timeKey: time ? `${time.open}-${time.close}` : null };
+            })
+            .filter((e) => e.timeKey);
 
-    if (!entries.length) return null;
+        if (!entries.length) return null;
 
-    // Group consecutive days that share the same timeKey
-    const groups: { start: string; end: string; timeKey: string }[] = [];
-    entries.forEach((entry) => {
-        const last = groups[groups.length - 1];
-        const isConsecutive =
-        last &&
-        last.timeKey === entry.timeKey &&
-        DAY_ORDER.indexOf(entry.day) === DAY_ORDER.indexOf(last.end) + 1;
+        // Group consecutive days that share the same timeKey
+        const groups: { start: string; end: string; timeKey: string }[] = [];
+        entries.forEach((entry) => {
+            const last = groups[groups.length - 1];
+            const isConsecutive =
+                last &&
+                last.timeKey === entry.timeKey &&
+                DAY_ORDER.indexOf(entry.day) === DAY_ORDER.indexOf(last.end) + 1;
 
-        if (isConsecutive) {
-        last.end = entry.day;
-        } else {
-        groups.push({ start: entry.day, end: entry.day, timeKey: entry.timeKey! });
-        }
-    });
+            if (isConsecutive) {
+                last.end = entry.day;
+            } else {
+                groups.push({ start: entry.day, end: entry.day, timeKey: entry.timeKey! });
+            }
+        });
 
-    return groups.map((g) => ({
-        label: g.start === g.end ? g.start : `${g.start} - ${g.end}`,
-        time: g.timeKey.replace('-', ' - '), // "09:00 - 18:00"
-    }));
+        return groups.map((g) => ({
+            label: g.start === g.end ? g.start : `${g.start} - ${g.end}`,
+            time: g.timeKey.replace('-', ' - '), // "09:00 - 18:00"
+        }));
     }
 
     return (
@@ -241,31 +241,31 @@ export default function infoBengkel() {
                     )}
                     {/* Operation Days and Date */}
                     <View style={styles.infoRow}>
-                    <View style={styles.iconCircle}>
-                        <Feather name="clock" size={18} color="#2196F3" />
+                        <View style={styles.iconCircle}>
+                            <Feather name="clock" size={18} color="#2196F3" />
+                        </View>
+                        <View style={styles.infoTextContainer}>
+                            <Text style={styles.infoLabel}>Operating Hours</Text>
+                            {(() => {
+                                const summary = getOperatingSummary(bengkelData);
+                                if (!summary) {
+                                    return (
+                                        <Text style={[styles.infoValue, { color: '#999', fontSize: 13 }]}>
+                                            Operating hours not provided
+                                        </Text>
+                                    );
+                                }
+                                return summary.map((g, i) => (
+                                    <View key={i} style={{ marginBottom: 4 }}>
+                                        <Text style={styles.infoValue}>{g.label}</Text>
+                                        <Text style={[styles.infoValue, { color: '#666', fontSize: 13, marginTop: -6 }]}>
+                                            {g.time}
+                                        </Text>
+                                    </View>
+                                ));
+                            })()}
+                        </View>
                     </View>
-                    <View style={styles.infoTextContainer}>
-                        <Text style={styles.infoLabel}>Operating Hours</Text>
-                        {(() => {
-                            const summary = getOperatingSummary(bengkelData);
-                            if (!summary) {
-                                return (
-                                    <Text style={[styles.infoValue, { color: '#999', fontSize: 13 }]}>
-                                        Operating hours not provided
-                                    </Text>
-                                );
-                            }
-                            return summary.map((g, i) => (
-                                <View key={i} style={{ marginBottom: 4 }}>
-                                    <Text style={styles.infoValue}>{g.label}</Text>
-                                    <Text style={[styles.infoValue, { color: '#666', fontSize: 13, marginTop: -6 }]}>
-                                        {g.time}
-                                    </Text>
-                                </View>
-                            ));
-                        })()}
-                    </View>
-                </View>
                 </View>
 
                 {/* Description */}
@@ -409,6 +409,8 @@ export const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderRadius: 16,
         padding: 16,
+        borderColor: '#1846a82a',
+        borderWidth: 1,
     },
     infoRow: {
         flexDirection: 'row',
@@ -457,6 +459,8 @@ export const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderRadius: 16,
         padding: 16,
+        borderColor: '#1846a82a',
+        borderWidth: 1,
     },
     sectionTitle: {
         fontSize: 18,
@@ -518,6 +522,8 @@ export const styles = StyleSheet.create({
         padding: 20,
         paddingBottom: 30,
         gap: 12,
+        borderColor: '#1846a82a',
+        borderWidth: 1,
     },
     secondaryButton: {
         flex: 1,

@@ -116,6 +116,10 @@ export default function PemanduProfile() {
         style={styles.header}
       >
         <SafeAreaView style={styles.headerContent}>
+          <TouchableOpacity style={styles.backButton} onPress={() => { router.back() }}>
+            <Feather name="arrow-left" size={24} color="white" />
+          </TouchableOpacity>
+
           <Avatar.Text
             size={80}
             label={userData?.name?.substring(0, 2).toUpperCase() || 'U'}
@@ -201,13 +205,22 @@ export default function PemanduProfile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#edf3f9ff',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: -64,
+    zIndex: 10,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderRadius: 20,
+    padding: 8,
   },
   header: {
     height: 260,
@@ -227,15 +240,16 @@ const styles = StyleSheet.create({
   },
   avatarLabel: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontFamily: 'SpaceMono-Bold'
   },
   name: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontFamily: 'SpaceMono-Bold'
   },
   role: {
     color: 'rgba(255,255,255,0.8)',
-    marginTop: 4,
+    marginTop: 2,
+    fontFamily: 'Inter-Light'
   },
   body: {
     flex: 1,
@@ -243,14 +257,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   infoCard: {
-    backgroundColor: '#fff',
+    backgroundColor: 'white',
+    borderRadius: 15,
     padding: 20,
-    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontWeight: 'bold',
-    color: '#0f172a',
     marginBottom: 20,
+    color: '#001453',
+    borderBottomWidth: 1,
+    borderBottomColor: '#d4e2ffc7',
+    fontFamily: 'SpaceMono-Bold'
   },
   infoRow: {
     flexDirection: 'row',
@@ -273,11 +295,13 @@ const styles = StyleSheet.create({
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    fontFamily: 'Inter-Light'
   },
   infoValue: {
     color: '#0f172a',
     fontWeight: '500',
     marginTop: 2,
+    fontFamily: 'Inter-Regular'
   },
   menuItem: {
     flexDirection: 'row',

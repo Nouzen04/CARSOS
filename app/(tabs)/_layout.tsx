@@ -1,6 +1,7 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Href, Tabs, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
@@ -125,7 +126,16 @@ export default function TabLayout() {
           options={{
             headerShown: true,
             headerTitle: '',
-            headerStyle: { backgroundColor: '#ffffff', height: 60 + insets.top, borderBottomWidth: 0, },
+            headerStyle: { height: 60 + insets.top, borderBottomWidth: 0, },
+            headerTransparent: true,
+            headerBackground: () => (
+              <LinearGradient
+                colors={['#6366f1', '#8b5cf6']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{ flex: 1 }}
+              />
+            ),
             tabBarLabel: 'Home',
             tabBarIcon: ({ color }) => <Feather name="search" size={24} color={color} />,
             headerRight: () => (
@@ -139,7 +149,7 @@ export default function TabLayout() {
                 <IconButton
                   icon={clicked ? 'close' : 'magnify'}
                   size={22}
-                  iconColor={clicked ? '#ef4444' : '#0f172a'}
+                  iconColor={clicked ? '#ffd9d9ff' : '#ffffffff'}
                   onPress={() => {
                     if (clicked) {
                       setClicked(false);
@@ -154,7 +164,7 @@ export default function TabLayout() {
                   onPress={() => router.push('/(tabs)/profileP' as Href)}
                   style={styles.profileBtn}
                 >
-                  <Feather name="user" size={20} color="#0f172a" />
+                  <Feather name="user" size={20} color="#ffffffff" />
                 </TouchableOpacity>
               </View>
             ),
@@ -229,7 +239,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 22,
-    color: '#0f172a',
+    color: '#ffffffff',
     fontFamily: 'SpaceMono',
   },
   headerRight: {
@@ -263,7 +273,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f1f5f9',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,

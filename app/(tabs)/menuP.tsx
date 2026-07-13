@@ -2,6 +2,7 @@ import { ModernCard } from '@/components/ModernCard';
 import { WorkshopImage } from '@/components/WorkshopImage';
 import Colors from '@/constants/Colors';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useHeaderHeight } from '@react-navigation/elements';
 import * as Location from 'expo-location';
 import { router, useLocalSearchParams } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
@@ -26,7 +27,7 @@ export default function PemanduHomeScreen() {
   const [driverLocation, setDriverLocation] = useState<{ latitude: number, longitude: number } | null>(null);
   const [locationDenied, setLocationDenied] = useState(false);
   const insets = useSafeAreaInsets();
-  const TAB_BAR_HEIGHT = 60 + insets.bottom;
+  const headerHeight = useHeaderHeight();
 
   useEffect(() => {
     fetchWorkshops();
@@ -126,7 +127,7 @@ export default function PemanduHomeScreen() {
     <ScrollView
       style={styles.container}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: 60 + insets.bottom + 20 }}
+      contentContainerStyle={{ paddingBottom: 60 + insets.bottom + 20, paddingTop: headerHeight }}
       keyboardShouldPersistTaps="handled"
       pointerEvents="auto"
     >

@@ -22,6 +22,14 @@ Notifications.setNotificationHandler({
 export async function registerForPushNotificationsAsync(userId: string) {
   if (Platform.OS === 'web') return null;
 
+  // Push notifications are not supported in Expo Go since SDK 53.
+  // They only work in a development build or production app.
+  const isExpoGo = Constants.appOwnership === 'expo';
+  if (isExpoGo) {
+    console.warn('Push notifications are not supported in Expo Go. Use a development build.');
+    return null;
+  }
+
   if (!Device.isDevice) {
     console.log('Must use physical device for Push Notifications');
     return null;
@@ -30,23 +38,27 @@ export async function registerForPushNotificationsAsync(userId: string) {
   try {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
-    
+
     if (existingStatus !== 'granted') {
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
-    
+
     if (finalStatus !== 'granted') {
       console.log('Permission not granted for push notifications');
       return null;
     }
 
     // Expo SDK 50+ requires a projectId to get the Expo push token.
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId || Constants.easConfig?.projectId;
-    
-    const tokenData = await Notifications.getExpoPushTokenAsync(
-      projectId ? { projectId } : undefined
-    );
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
+
+    if (!projectId) {
+      console.warn('No projectId found. Configure EAS in app.json to enable push notifications.');
+      return null;
+    }
+
+    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
     const token = tokenData.data;
 
     // Save token to user profile in Firestore
