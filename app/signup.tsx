@@ -27,10 +27,10 @@ interface Service {
 const SERVICES = [
   { id: 1, name: 'Full Service', icon: 'settings' },
   { id: 2, name: 'Tire Change', icon: 'disc' },
-  { id: 3, name: 'Brake Repair', icon: 'tool' },
+  { id: 3, name: 'Towing', icon: 'tool' },
   { id: 4, name: 'Engine Tune', icon: 'activity' },
-  { id: 5, name: 'Oil Service', icon: 'droplet' },
-  { id: 6, name: 'Aircond', icon: 'wind' }
+  { id: 5, name: 'Battery', icon: 'battery' },
+  { id: 6, name: 'Aircond', icon: 'air-conditioner' }
 ];
 
 const COMMON_FACILITIES = [
@@ -54,6 +54,7 @@ export default function SignupScreen() {
   const [selectedServices, setSelectedServices] = useState<number[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [showValidation, setShowValidation] = useState(false);
 
   // Handlers for launching file picker
   const selectFile = async () => {
@@ -152,6 +153,16 @@ export default function SignupScreen() {
           if (location) {
             userData.location = toGeoPoint(location);
           }
+          setShowValidation(true);
+          if (!profilePicture) {
+            Alert.alert("Missing Info", "Please select a workshop profile picture.");
+            return;
+          }
+
+          if (selectedFiles.length === 0) {
+            Alert.alert("Missing Info", "Please upload your business license.");
+            return;
+          }
           // Handle profile picture upload
           if (profilePicture) {
             setUploading(true);
@@ -165,7 +176,7 @@ export default function SignupScreen() {
               console.error("Error uploading profile picture:", uploadError);
               Alert.alert(
                 "Upload Failed",
-                "Profile picture could not be saved. Publish Storage rules (see FIRESTORE_RULES.md), then try updating your photo from the workshop profile screen."
+                "Profile picture could not be saved."
               );
             } finally {
               setUploading(false);
@@ -207,6 +218,13 @@ export default function SignupScreen() {
       console.log(error);
       Alert.alert('Sign Up Failed', error.message);
     }
+
+    const handleSubmit = () => {
+
+
+
+
+    };
   }
 
   return (
@@ -366,7 +384,7 @@ export default function SignupScreen() {
 
                 <Text style={styles.sectionLabel}>Workshop Profile Picture</Text>
                 <TouchableOpacity
-                  style={styles.profilePicBtn}
+                  style={[styles.profilePicBtn, showValidation && !profilePicture && styles.inputError]}
                   onPress={pickProfilePicture}
                 >
                   {profilePicture ? (
@@ -378,15 +396,21 @@ export default function SignupScreen() {
                     </View>
                   )}
                 </TouchableOpacity>
+                {showValidation && !profilePicture && (
+                  <Text style={styles.errorText}>Workshop profile picture is required</Text>
+                )}
 
                 <Text style={styles.sectionLabel}>Business Verification</Text>
                 <TouchableOpacity
-                  style={styles.uploadBtn}
+                  style={[styles.uploadBtn, showValidation && selectedFiles.length === 0 && styles.inputError]}
                   onPress={selectFile}
                 >
                   <Feather name="upload-cloud" size={20} color={Colors.light.primary} />
                   <Text style={styles.uploadBtnText}>Upload Business License</Text>
                 </TouchableOpacity>
+                {showValidation && selectedFiles.length === 0 && (
+                  <Text style={styles.errorText}>Business license is required</Text>
+                )}
 
                 {selectedFiles.length > 0 && (
                   <View style={styles.filesList}>
@@ -613,5 +637,18 @@ const styles = StyleSheet.create({
   fileInfoSubtext: {
     fontSize: 12,
     color: '#64748b',
+  },
+  required: {
+    color: "#ef4444",
+  },
+  inputError: {
+    borderColor: "#ef4444",
+    borderWidth: 1,
+  },
+  errorText: {
+    color: "#ef4444",
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 8,
   },
 });

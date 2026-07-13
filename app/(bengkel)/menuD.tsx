@@ -221,7 +221,7 @@ export default function BengkelHome() {
                 style={styles.header}
             >
                 <SafeAreaView style={styles.headerContent}>
-                    <Text variant="headlineSmall" style={styles.headerTitle}>Workshop Portal</Text>
+                    <Text variant="headlineSmall" style={styles.headerTitle}>Hi, {workshopData?.name}</Text>
                     <Text variant="bodyMedium" style={styles.headerSubtitle}>Manage your active requests</Text>
                 </SafeAreaView>
             </LinearGradient>
@@ -273,23 +273,25 @@ export default function BengkelHome() {
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
-        backgroundColor: '#f8fafc',
+        backgroundColor: '#F8FAFC',
     },
     header: {
-        height: 160,
+        height: 200,
         borderBottomLeftRadius: 32,
         borderBottomRightRadius: 32,
     },
     headerContent: {
+        marginTop: 30,
         paddingHorizontal: 25,
     },
     headerTitle: {
         color: '#fff',
-        fontWeight: 'bold',
+        fontFamily: 'SpaceMono-Bold',
     },
     headerSubtitle: {
         color: 'rgba(255,255,255,0.8)',
         marginTop: 4,
+        fontFamily: 'Inter'
     },
     body: {
         flex: 1,
@@ -300,6 +302,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderRadius: 12,
         marginBottom: 20,
+        fontFamily: 'Inter'
     },
     scrollContainer: {
         flex: 1,
@@ -327,6 +330,7 @@ const styles = StyleSheet.create({
     statusText: {
         fontWeight: 'bold',
         flex: 1,
+        fontFamily: 'Inter'
     },
     timeText: {
         color: '#94a3b8',
@@ -351,10 +355,12 @@ const styles = StyleSheet.create({
     infoLabel: {
         color: '#64748b',
         fontSize: 10,
+        fontFamily: 'Inter'
     },
     infoValue: {
         color: '#0f172a',
         fontWeight: '600',
+        fontFamily: 'Inter'
     },
     mapContainer: {
         height: 150,
@@ -378,10 +384,12 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderRadius: 8,
         alignItems: 'center',
+        fontFamily: 'Inter'
     },
     actionBtnText: {
         color: '#fff',
         fontWeight: 'bold',
+        fontFamily: 'Inter'
     },
     viewDetailsBtn: {
         backgroundColor: '#6366f1',
@@ -395,6 +403,7 @@ const styles = StyleSheet.create({
     viewDetailsText: {
         color: '#fff',
         fontWeight: 'bold',
+        fontFamily: 'Inter'
     },
     emptyState: {
         marginTop: 60,
@@ -413,10 +422,12 @@ const styles = StyleSheet.create({
     emptyText: {
         color: '#475569',
         textAlign: 'center',
+        fontFamily: 'Inter'
     },
     emptySubtext: {
         color: '#94a3b8',
         textAlign: 'center',
         marginTop: 8,
+        fontFamily: 'Inter'
     },
 });

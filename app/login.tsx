@@ -72,14 +72,13 @@ export default function LoginScreen() {
             router.replace('/menuP' as Href);
           }
         } else {
-          // If Firestore document doesn't exist, the user hasn't completed sign up
           await auth.signOut();
           Alert.alert('Sign In Failed', 'Your account profile was not found. Please sign up first.');
         }
       }
     } catch (error: any) {
       console.log(error);
-      Alert.alert('Sign In Failed', error.message);
+      Alert.alert('Sign In Failed', 'Wrong password or email.' + error.message);
     }
   }
 

@@ -226,7 +226,7 @@ export default function infoBengkel() {
                         {SERVICES.filter(service => (bengkelData?.selectedServices || []).includes(service.id)).map((item: any, index: number) => (
                             <View key={index} style={styles.serviceItem}>
                                 <Feather name={item.icon as any} size={20} color="#333" />
-                                <Text style={[styles.serviceName, {marginTop: 8}]}>{item.name}</Text>
+                                <Text style={[styles.serviceName, { marginTop: 8 }]}>{item.name}</Text>
                             </View>
                         ))}
                     </View>
@@ -243,7 +243,7 @@ export default function infoBengkel() {
                                 : [])
                         ).map((facility: string, index: number) => (
                             <View key={index} style={styles.facilityItem}>
-                                <Feather name="check-circle" size={14} color="#4CAF50"  />
+                                <Feather name="check-circle" size={14} color="#4CAF50" />
                                 <Text style={styles.serviceName}>{facility}</Text>
                             </View>
                         ))}
@@ -427,16 +427,16 @@ export const styles = StyleSheet.create({
         borderRadius: 12,
         padding: 12,
         borderWidth: 1,
-        borderColor: '#3755c318',   
+        borderColor: '#3755c318',
     },
     serviceItem: {
-        width: (width - 64) / 3,
+        width: (width - 100) / 3,
         backgroundColor: '#3ad4ff0a',
         borderRadius: 12,
         padding: 12,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#3755c318',   
+        borderColor: '#3755c318',
     },
     serviceName: {
         fontSize: 12,

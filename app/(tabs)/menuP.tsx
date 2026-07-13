@@ -2,12 +2,14 @@ import { ModernCard } from '@/components/ModernCard';
 import { WorkshopImage } from '@/components/WorkshopImage';
 import Colors from '@/constants/Colors';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { router, useLocalSearchParams } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { db } from '../../firebase';
+import { formatDistance, getDistance } from '../../utils/mapService';
 
 const SERVICES = [
   { id: '1', title: 'Flat Tyre', icon: 'tire', color: '#6366f1' },
@@ -21,17 +23,19 @@ export default function PemanduHomeScreen() {
   const [workshops, setWorkshops] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
-
+  const [driverLocation, setDriverLocation] = useState<{ latitude: number, longitude: number } | null>(null);
+  const [locationDenied, setLocationDenied] = useState(false);
   const insets = useSafeAreaInsets();
   const TAB_BAR_HEIGHT = 60 + insets.bottom;
 
   useEffect(() => {
     fetchWorkshops();
+    getDriverLocation();
   }, []);
 
   const fetchWorkshops = async () => {
     try {
-      const q = query(collection(db, 'users'), where('role', '==', 'bengkel'));
+      const q = query(collection(db, 'users'), where('role', '==', 'bengkel'), where('verified', '==', true));
       const querySnapshot = await getDocs(q);
       const list = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -45,6 +49,48 @@ export default function PemanduHomeScreen() {
     }
   };
 
+  const getDriverLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationDenied(true);
+        return;
+      }
+
+      const loc = await Location.getCurrentPositionAsync({});
+      setDriverLocation({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+    } catch (error) {
+      console.error("Error getting driver location:", error);
+      setLocationDenied(true);
+    }
+  };
+
+  const sortedWorkshops = useMemo(() => {
+    if (!driverLocation) {
+      // Permission denied or not resolved yet — fall back to unsorted (insertion order)
+      return workshops;
+    }
+
+    return [...workshops]
+      .map((workshop: any) => ({
+        ...workshop,
+        distance: workshop.location
+          ? getDistance(driverLocation, {
+            latitude: workshop.location.latitude,
+            longitude: workshop.location.longitude,
+          })
+          : null,
+      }))
+      .sort((a, b) => {
+        if (a.distance === null) return 1;
+        if (b.distance === null) return -1;
+        return a.distance - b.distance;
+      });
+  }, [workshops, driverLocation]);
+
   const handleServicePress = (serviceId: string) => {
     if (selectedServiceId === serviceId) {
       setSelectedServiceId(null);
@@ -53,13 +99,13 @@ export default function PemanduHomeScreen() {
     }
   };
 
-  const filteredWorkshops = workshops.filter((workshop) => {
+  const filteredWorkshops = sortedWorkshops.filter((workshop) => {
     // 1. Service filter
     let matchesService = true;
     if (selectedServiceId) {
       if (selectedServiceId === '1') matchesService = workshop.selectedServices?.includes(2);
-      else if (selectedServiceId === '2') matchesService = workshop.selectedServices?.includes(1);
-      else if (selectedServiceId === '3') matchesService = workshop.selectedServices?.includes(1) || workshop.selectedServices?.includes(4);
+      else if (selectedServiceId === '2') matchesService = workshop.selectedServices?.includes(3);
+      else if (selectedServiceId === '3') matchesService = workshop.selectedServices?.includes(5);
       else if (selectedServiceId === '4') matchesService = workshop.selectedServices?.includes(4);
     }
 
@@ -76,9 +122,9 @@ export default function PemanduHomeScreen() {
   });
 
   return (
-    
-    <ScrollView 
-      style={styles.container} 
+
+    <ScrollView
+      style={styles.container}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 60 + insets.bottom + 20 }}
       keyboardShouldPersistTaps="handled"
@@ -86,8 +132,8 @@ export default function PemanduHomeScreen() {
     >
       <View style={styles.content}>
         <View style={styles.welcomeSection}>
-          <Text  style={styles.welcomeTitle}>Need Assistance?</Text>
-          <Text  style={styles.welcomeSubtitle}>Select a service for immediate help</Text>
+          <Text style={styles.welcomeTitle}>Need Assistance?</Text>
+          <Text style={styles.welcomeSubtitle}>Select a service for immediate help</Text>
         </View>
 
         <View style={styles.serviceGrid}>
@@ -100,7 +146,7 @@ export default function PemanduHomeScreen() {
                 onPress={() => handleServicePress(service.id)}
                 style={styles.serviceItem}
               >
-                <View 
+                <View
                   style={[
                     styles.serviceIconContainer,
                     {
@@ -111,13 +157,13 @@ export default function PemanduHomeScreen() {
                       borderWidth: 2,
                       borderColor: service.color,
                     }
-                  ]}  
+                  ]}
                 >
                   <MaterialCommunityIcons name={service.icon as any} size={28} color={service.color} />
                 </View>
-                <Text 
+                <Text
                   style={[
-                    styles.serviceLabel, 
+                    styles.serviceLabel,
                     isSelected && { color: service.color, fontWeight: 'bold' }
                   ]}
                 >
@@ -129,9 +175,9 @@ export default function PemanduHomeScreen() {
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text  style={styles.sectionTitle}>
-            {selectedServiceId 
-              ? `Nearby for ${SERVICES.find(s => s.id === selectedServiceId)?.title}` 
+          <Text style={styles.sectionTitle}>
+            {selectedServiceId
+              ? `Nearby for ${SERVICES.find(s => s.id === selectedServiceId)?.title}`
               : 'Nearby Workshops'}
           </Text>
         </View>
@@ -154,7 +200,7 @@ export default function PemanduHomeScreen() {
                 />
                 <View style={styles.bengkelDetails}>
                   <View style={styles.bengkelTitleRow}>
-                    <Text  style={styles.bengkelName}>{workshop.name}</Text>
+                    <Text style={styles.bengkelName}>{workshop.name}</Text>
                     <View style={styles.ratingBadge}>
                       <MaterialCommunityIcons name="star" size={14} color="#f59e0b" />
                       <Text style={styles.ratingText}>{workshop.rating ?? '0.0'}</Text>
@@ -163,17 +209,21 @@ export default function PemanduHomeScreen() {
 
                   <View style={styles.bengkelInfoRow}>
                     <Feather name="map-pin" size={11} color="#64748b" />
-                    <Text  
-                    style={styles.bengkelInfoText}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
+                    <Text
+                      style={styles.bengkelInfoText}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
                     >
                       {workshop.address || 'Address not available'}
                     </Text>
+                    {typeof workshop.distance === 'number' && (
+                      <Text style={[styles.bengkelInfoText, { textAlign: 'right' }]}>
+                        · {formatDistance(workshop.distance)}</Text>
+                    )}
                   </View>
                 </View>
               </TouchableOpacity>
-              </ModernCard>
+            </ModernCard>
           ))
         ) : (
           <View style={styles.emptyState}>
@@ -214,20 +264,20 @@ const styles = StyleSheet.create({
   },
   serviceName: {
     fontSize: 12,
-        marginTop: 8,
-        color: '#001453',
-        textAlign: 'center',
-        fontWeight: '500',
+    marginTop: 8,
+    color: '#001453',
+    textAlign: 'center',
+    fontWeight: '500',
   },
   serviceItem: {
     alignItems: 'center',
     flex: 1,
-    shadowColor: '#000000', 
+    shadowColor: '#000000',
     shadowOffset: {
       width: 0,
-      height: 4,                
+      height: 4,
     },
-    shadowOpacity: 0.3,        
+    shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 4,
   },

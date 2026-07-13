@@ -1,18 +1,20 @@
 import { ModernCard } from "@/components/ModernCard";
 import Colors from "@/constants/Colors";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
 import { useLocalSearchParams } from "expo-router";
 import * as Sharing from 'expo-sharing';
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, View, RefreshControl } from "react-native";
+import { ActivityIndicator, Alert, Dimensions, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { BarChart } from "react-native-chart-kit";
 import { Button, Surface, Text } from "react-native-paper";
 import { db } from "../../firebase";
 
 export default function ReportDetail() {
-    const { id, name } = useLocalSearchParams();
+    const { id } = useLocalSearchParams();
+    const { name } = useLocalSearchParams<{ name: string }>();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [exporting, setExporting] = useState(false);
@@ -167,7 +169,15 @@ export default function ReportDetail() {
             `;
 
             const { uri } = await Print.printToFileAsync({ html });
-            await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+            // sanitize the name to avoid invalid filename characters
+            const safeName = name.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
+            const newUri = `${FileSystem.cacheDirectory}${safeName}.pdf`;
+
+            await FileSystem.moveAsync({
+                from: uri,
+                to: newUri,
+            });
+            await Sharing.shareAsync(newUri, { UTI: 'com.adobe.pdf', mimeType: 'application/pdf' });
         } catch (error) {
             console.error("PDF Generation error:", error);
             Alert.alert("Export Error", "Failed to generate PDF report.");
@@ -186,8 +196,8 @@ export default function ReportDetail() {
     }
 
     return (
-        <ScrollView 
-            style={styles.container} 
+        <ScrollView
+            style={styles.container}
             contentContainerStyle={styles.content}
             refreshControl={
                 <RefreshControl
@@ -204,15 +214,15 @@ export default function ReportDetail() {
                         <Text variant="headlineSmall" style={styles.workshopName}>{name}</Text>
                         <Text variant="bodyMedium" style={styles.subtitle}>Performance Overview</Text>
                     </View>
-                    <Button 
-                        mode="contained" 
-                        onPress={generatePDF} 
+                    <Button
+                        mode="contained"
+                        onPress={generatePDF}
                         loading={exporting}
                         disabled={exporting}
                         icon="file-pdf-box"
                         style={styles.exportBtn}
                     >
-                        Export PDF
+                        Export
                     </Button>
                 </View>
             </View>
@@ -319,11 +329,11 @@ export default function ReportDetail() {
                             <View style={styles.reviewHeader}>
                                 <View style={styles.ratingRow}>
                                     {[1, 2, 3, 4, 5].map((s) => (
-                                        <MaterialCommunityIcons 
-                                            key={s} 
-                                            name={s <= review.score ? "star" : "star-outline"} 
-                                            size={16} 
-                                            color={s <= review.score ? "#f59e0b" : "#cbd5e1"} 
+                                        <MaterialCommunityIcons
+                                            key={s}
+                                            name={s <= review.score ? "star" : "star-outline"}
+                                            size={16}
+                                            color={s <= review.score ? "#f59e0b" : "#cbd5e1"}
                                         />
                                     ))}
                                     <Text style={styles.reviewScore}>{review.score}.0</Text>

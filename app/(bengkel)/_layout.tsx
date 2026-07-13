@@ -1,8 +1,12 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { BlurView } from 'expo-blur';
 import { Tabs } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React from 'react';
+import { StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function TabBarIcon(props: {
     name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -13,6 +17,7 @@ function TabBarIcon(props: {
 
 export default function BengkelLayout() {
     const colorScheme = useColorScheme();
+    const insets = useSafeAreaInsets();
 
     return (
         <Tabs
@@ -22,6 +27,7 @@ export default function BengkelLayout() {
             <Tabs.Screen
                 name="menuD"
                 options={{
+                    headerShown: false,
                     title: 'Hi SNS Service',
                     tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
                 }}
@@ -33,6 +39,22 @@ export default function BengkelLayout() {
                     tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
                 }}
             />
+            <BlurView
+                intensity={10}
+                tint="light"
+                style={[styles.statusBarBackground, { height: insets.top }]}
+            />
+            <StatusBar style="dark" />
         </Tabs>
     );
 }
+
+const styles = StyleSheet.create({
+    statusBarBackground: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 10,
+    },
+});

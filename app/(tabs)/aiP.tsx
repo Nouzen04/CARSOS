@@ -211,11 +211,11 @@ export default function AIChatScreen() {
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
             style={styles.container}
-            keyboardVerticalOffset={Platform.OS === 'ios' ?  0 :  insets.bottom}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             pointerEvents="box-none"
         >
             {/* Header Container */}
-            <View style={[styles.header,{paddingTop: Platform.OS === 'ios' ? 80 : 20}]}>
+            <View style={[styles.header, { paddingTop: Platform.OS === 'ios' ? 80 : 60 }]}>
                 <View style={styles.botIcon}>
                     <MaterialIcons name="auto-awesome" size={20} color="white" />
                 </View>
