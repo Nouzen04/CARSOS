@@ -1,9 +1,14 @@
-import React from "react";
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Platform, Alert } from "react-native";
-import { DataTable, IconButton } from "react-native-paper";
+import { GradientButton } from '@/components/GradientButton';
+import Colors from '@/constants/Colors';
 import * as FileSystem from 'expo-file-system/legacy';
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { collection, deleteDoc, doc, onSnapshot } from "firebase/firestore";
+import React from "react";
+import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { DataTable, IconButton } from "react-native-paper";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { db } from "../../firebase";
 
 export default function ViewUser() {
@@ -15,7 +20,7 @@ export default function ViewUser() {
 
     const [users, setUsers] = React.useState<any[]>([]);
     const [loading, setLoading] = React.useState(true);
-
+    const insets = useSafeAreaInsets();
     React.useEffect(() => {
         // Real-time listener for users collection
         const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
@@ -52,7 +57,7 @@ export default function ViewUser() {
         try {
             // 1. Generate CSV string
             const headerRow = headers.map(h => h.label).join(',');
-            const bodyRows = users.map(user => 
+            const bodyRows = users.map(user =>
                 headers.map(h => `"${user[h.key] || ''}"`).join(',')
             ).join('\n');
             const csvString = `${headerRow}\n${bodyRows}`;
@@ -72,7 +77,7 @@ export default function ViewUser() {
                 // 2b. Mobile: Use FileSystem and Sharing
                 const fileUri = FileSystem.cacheDirectory + 'users.csv';
                 await FileSystem.writeAsStringAsync(fileUri, csvString);
-                
+
                 const isSharingAvailable = await Sharing.isAvailableAsync();
                 if (isSharingAvailable) {
                     await Sharing.shareAsync(fileUri);
@@ -95,7 +100,29 @@ export default function ViewUser() {
 
     return (
         <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <LinearGradient
+                colors={[Colors.light.primary, Colors.light.secondary]}
+                style={styles.header}
+            >
+                <SafeAreaView style={styles.headerContent}>
+                    <View style={styles.headerTop}>
+                        <IconButton
+                            icon="arrow-left"
+                            iconColor="#fff"
+                            size={24}
+                            onPress={() => { router.back() }}
+                            style={{ position: 'fixed', left: -10 }}
+                        />
+                        <View style={styles.headerTitleContainer}>
+                            <Text style={styles.headerTitle}>Users</Text>
+                        </View>
+                    </View>
+                </SafeAreaView>
+            </LinearGradient>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 210 + insets.bottom }}
+                style={styles.scrollContainer}>
                 <View style={styles.DataTableWrapper}>
                     <DataTable>
                         <DataTable.Header style={styles.DataTableHeader}>
@@ -133,13 +160,10 @@ export default function ViewUser() {
                     </DataTable>
                 </View>
                 <View style={{ marginTop: 20 }}>
-                    <TouchableOpacity 
-                        style={styles.csvLink} 
+                    <GradientButton
                         onPress={handleExportCSV}
-                        activeOpacity={0.7}
-                    >
-                        <Text style={styles.csvLinkText}>Export to CSV</Text>
-                    </TouchableOpacity>
+                        title="Export to CSV"
+                    />
                 </View>
             </ScrollView>
         </View>
@@ -149,9 +173,38 @@ export default function ViewUser() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f6f8fb',
+        backgroundColor: '#edf3f9ff',
+    },
+    header: {
+        height: 300,
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
+    },
+    headerContent: {
+        paddingHorizontal: 20,
+    },
+    headerTop: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    headerTitleContainer: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        alignItems: 'flex-end',
+        pointerEvents: 'none',
+    },
+    headerTitle: {
+        color: '#e3faffdf',
+        fontFamily: 'SpaceMono-Bold',
+        fontSize: 28,
+        textTransform: 'uppercase',
     },
     scrollContainer: {
+        flex: 1,
+        marginVertical: '-50%',
         padding: 16,
     },
     DataTableWrapper: {

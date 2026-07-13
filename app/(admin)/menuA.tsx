@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Href, router } from 'expo-router';
 import { collection, getDocs } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View, RefreshControl, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { IconButton, Surface, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { auth, db } from '../../firebase';
@@ -84,9 +84,9 @@ export default function AdminDashboard() {
             "Are you sure you want to logout from Admin panel?",
             [
                 { text: "Cancel", style: "cancel" },
-                { 
-                    text: "Logout", 
-                    style: "destructive", 
+                {
+                    text: "Logout",
+                    style: "destructive",
                     onPress: async () => {
                         try {
                             await auth.signOut();
@@ -94,7 +94,7 @@ export default function AdminDashboard() {
                         } catch (error) {
                             console.error("Logout error:", error);
                         }
-                    } 
+                    }
                 }
             ]
         );
@@ -108,14 +108,14 @@ export default function AdminDashboard() {
             >
                 <SafeAreaView style={styles.headerContent}>
                     <View style={styles.headerTop}>
-                        <View>
+                        <View style={{ marginTop: 15 }}>
                             <Text variant="headlineSmall" style={styles.headerTitle}>Dashboard</Text>
                             <Text variant="bodyMedium" style={styles.headerSubtitle}>System Overview</Text>
                         </View>
-                        <IconButton 
-                            icon="logout" 
-                            iconColor="#fff" 
-                            size={24} 
+                        <IconButton
+                            icon="logout"
+                            iconColor="#fff"
+                            size={24}
                             onPress={handleLogout}
                             style={styles.logoutBtn}
                         />
@@ -123,8 +123,8 @@ export default function AdminDashboard() {
                 </SafeAreaView>
             </LinearGradient>
 
-            <ScrollView 
-                style={styles.content} 
+            <ScrollView
+                style={styles.content}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 40 }}
                 refreshControl={
@@ -157,38 +157,38 @@ export default function AdminDashboard() {
 
                 <View style={styles.statsGrid}>
 
-                        <ModernCard style={styles.statCard} elevation={2}>
-                            <View style={[styles.statIconContainer, { backgroundColor: '#6366f1' + '15' }]}>
-                                <MaterialCommunityIcons name= 'account-group' size={24} color= '#6366f1' />
-                            </View>
-                            <Text variant="headlineMedium" style={[styles.statValue, { color: '#6366f1' }]}>{stats.totalUser}</Text>
-                            <Text variant="labelMedium" style={styles.statTitle}>Total User</Text>
-                        </ModernCard>
+                    <ModernCard style={[styles.statCard]} elevation={2}>
+                        <View style={[styles.statIconContainer, { backgroundColor: '#6366f1' + '15' }]}>
+                            <MaterialCommunityIcons name='account-group' size={24} color='#6366f1' />
+                        </View>
+                        <Text variant="headlineMedium" style={[styles.statValue, { color: '#6366f1' }]}>{stats.totalUser}</Text>
+                        <Text variant="labelMedium" style={styles.statTitle}>Total User</Text>
+                    </ModernCard>
 
-                        <ModernCard style={styles.statCard} elevation={2}>
-                            <View style={[styles.statIconContainer, { backgroundColor: '#8b5cf6' + '15' }]}>
-                                <MaterialCommunityIcons name= 'tools' size={24} color= '#8b5cf6' />
-                            </View>
-                            <Text variant="headlineMedium" style={[styles.statValue, { color: '#8b5cf6' }]}>{stats.workshop}</Text>
-                            <Text variant="labelMedium" style={styles.statTitle}>Workshop</Text>
-                        </ModernCard>
-                        
-                        <ModernCard style={styles.statCard} elevation={2}>
-                            <View style={[styles.statIconContainer, { backgroundColor: '#3b82f6' + '15' }]}>
-                                <MaterialCommunityIcons name= 'car-wrench' size={24} color= '#3b82f6' />
-                            </View>
-                            <Text variant="headlineMedium" style={[styles.statValue, { color: '#3b82f6' }]}>{stats.job}</Text>
-                            <Text variant="labelMedium" style={styles.statTitle}>Jobs</Text>
-                        </ModernCard>
+                    <ModernCard style={styles.statCard} elevation={2}>
+                        <View style={[styles.statIconContainer, { backgroundColor: '#8b5cf6' + '15' }]}>
+                            <MaterialCommunityIcons name='tools' size={24} color='#8b5cf6' />
+                        </View>
+                        <Text variant="headlineMedium" style={[styles.statValue, { color: '#8b5cf6' }]}>{stats.workshop}</Text>
+                        <Text variant="labelMedium" style={styles.statTitle}>Workshop</Text>
+                    </ModernCard>
 
-                        <ModernCard style={styles.statCard} elevation={2}>
-                            <View style={[styles.statIconContainer, { backgroundColor: '#f59e0b' + '15' }]}>
-                                <MaterialCommunityIcons name= 'alert-circle' size={24} color= '#f59e0b' />
-                            </View>
-                            <Text variant="headlineMedium" style={[styles.statValue, { color: '#f59e0b' }]}>{stats.pending}</Text>
-                            <Text variant="labelMedium" style={styles.statTitle}>Pending</Text>
-                        </ModernCard>
-                   
+                    <ModernCard style={styles.statCard} elevation={2}>
+                        <View style={[styles.statIconContainer, { backgroundColor: '#3b82f6' + '15' }]}>
+                            <MaterialCommunityIcons name='car-wrench' size={24} color='#3b82f6' />
+                        </View>
+                        <Text variant="headlineMedium" style={[styles.statValue, { color: '#3b82f6' }]}>{stats.job}</Text>
+                        <Text variant="labelMedium" style={styles.statTitle}>Jobs</Text>
+                    </ModernCard>
+
+                    <ModernCard style={styles.statCard} elevation={2}>
+                        <View style={[styles.statIconContainer, { backgroundColor: '#f59e0b' + '15' }]}>
+                            <MaterialCommunityIcons name='alert-circle' size={24} color='#f59e0b' />
+                        </View>
+                        <Text variant="headlineMedium" style={[styles.statValue, { color: '#f59e0b' }]}>{stats.pending}</Text>
+                        <Text variant="labelMedium" style={styles.statTitle}>Pending</Text>
+                    </ModernCard>
+
                 </View>
 
                 <View style={styles.sectionHeader}>
@@ -228,7 +228,7 @@ export default function AdminDashboard() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8fafc',
+        backgroundColor: '#edf3f9ff',
     },
     header: {
         height: 180,
@@ -245,11 +245,14 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     headerTitle: {
-        color: '#fff',
-        fontWeight: 'bold',
+        color: '#e3faffdf',
+        fontFamily: 'SpaceMono-Bold',
+        fontSize: 28,
+        textTransform: 'uppercase'
     },
     headerSubtitle: {
-        color: 'rgba(255,255,255,0.8)',
+        color: '#d1e9f2ff',
+        fontFamily: 'Inter-Light'
     },
     logoutBtn: {
         backgroundColor: 'rgba(255,255,255,0.2)',
@@ -263,14 +266,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        marginBottom: 20,
+        marginBottom: 4,
     },
     statCard: {
         width: '48%',
         padding: 15,
         marginBottom: 15,
         alignItems: 'flex-start',
-        backgroundColor: '#fff',
+        backgroundColor: '#ffffffff',
     },
     statIconContainer: {
         width: 44,
@@ -283,17 +286,20 @@ const styles = StyleSheet.create({
     statValue: {
         fontWeight: 'bold',
         fontSize: 22,
+        fontFamily: 'Inter'
     },
     statTitle: {
         color: '#64748b',
         marginTop: 2,
+        fontFamily: 'Inter'
     },
     sectionHeader: {
         marginVertical: 15,
     },
     sectionTitle: {
-        fontWeight: 'bold',
-        color: '#0f172a',
+        color: '#001453',
+        fontSize: 20,
+        fontFamily: 'SpaceMono-Bold',
     },
     actionsContainer: {
         gap: 12,
@@ -317,12 +323,14 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     actionText: {
-        fontWeight: '600',
-        color: '#0f172a',
+        fontWeight: '700',
+        color: '#001453',
+        fontFamily: 'Inter'
     },
     actionSubtitle: {
         color: '#64748b',
         marginTop: 2,
+        fontFamily: 'Inter'
     },
     bulletNotification: {
         width: 8,

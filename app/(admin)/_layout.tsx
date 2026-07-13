@@ -8,11 +8,14 @@ export default function AdminLayout() {
     const insets = useSafeAreaInsets();
     return (
         <>
-        <Stack>
-            <Stack.Screen name="menuA" options={{ title: 'Admin Dashboard', headerShown: false, headerLeft: () => null }} />
-            <Stack.Screen name="reportDetail" options={{ title: 'Workshop Metrics', headerShown: true }} />
-        </Stack>
-        <BlurView
+            <Stack>
+                <Stack.Screen name="menuA" options={{ title: 'Admin Dashboard', headerShown: false, headerLeft: () => null }} />
+                <Stack.Screen name="reportDetail" options={{ title: 'Workshop Metrics', headerShown: true }} />
+                <Stack.Screen name="manageworkshopA" options={{ title: 'Manage Workshops', headerShown: false }} />
+                <Stack.Screen name="viewuserA" options={{ title: 'Users', headerShown: false }} />
+                <Stack.Screen name="reportsA" options={{ title: 'System Reports', headerShown: false }} />
+            </Stack>
+            <BlurView
                 intensity={10}
                 tint="light"
                 style={[styles.statusBarBackground, { height: insets.top }]}

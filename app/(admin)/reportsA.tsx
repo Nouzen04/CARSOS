@@ -1,8 +1,11 @@
-import { Href, router } from "expo-router";
+import Colors from '@/constants/Colors';
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import React from "react";
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { ActivityIndicator, DataTable } from "react-native-paper";
+import { ActivityIndicator, DataTable, IconButton } from "react-native-paper";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { db } from "../../firebase";
 
 export default function Report() {
@@ -12,6 +15,7 @@ export default function Report() {
     const [itemsPerPage, onItemsPerPageChange] = React.useState(numberOfItemsPerPageList[0]);
     const [workshops, setWorkshops] = React.useState<any[]>([]);
     const [loading, setLoading] = React.useState(true);
+    const insets = useSafeAreaInsets();
 
     React.useEffect(() => {
         // Fetch only verified workshops for reporting
@@ -46,7 +50,29 @@ export default function Report() {
 
     return (
         <View style={styles.container}>
-            <ScrollView style={styles.scrollContainer}>
+            <LinearGradient
+                colors={[Colors.light.primary, Colors.light.secondary]}
+                style={styles.header}
+            >
+                <SafeAreaView style={styles.headerContent}>
+                    <View style={styles.headerTop}>
+                        <IconButton
+                            icon="arrow-left"
+                            iconColor="#fff"
+                            size={24}
+                            onPress={() => { router.back() }}
+                            style={{ position: 'fixed', left: -10 }}
+                        />
+                        <View style={styles.headerTitleContainer}>
+                            <Text style={styles.headerTitle}>Workshop Reports</Text>
+                        </View>
+                    </View>
+                </SafeAreaView>
+            </LinearGradient>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                style={styles.scrollContainer}
+                contentContainerStyle={{ paddingBottom: 210 + insets.bottom }}>
                 <View style={styles.DataTableWrapper}>
                     <DataTable>
                         <DataTable.Header style={styles.DataTableHeader}>
@@ -104,9 +130,38 @@ export default function Report() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f6f8fb',
+        backgroundColor: '#edf3f9ff',
+    },
+    headerTitle: {
+        color: '#e3faffdf',
+        fontFamily: 'SpaceMono-Bold',
+        fontSize: 28,
+        textTransform: 'uppercase',
+    },
+    headerTitleContainer: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        alignItems: 'flex-end',
+        pointerEvents: 'none',
+    },
+    headerTop: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    headerContent: {
+        paddingHorizontal: 20,
+    },
+    header: {
+        height: 300,
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
     },
     scrollContainer: {
+        flex: 1,
+        marginVertical: '-50%',
         padding: 16,
     },
     headerContainer: {

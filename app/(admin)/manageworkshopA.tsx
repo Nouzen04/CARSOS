@@ -1,6 +1,11 @@
+import Colors from '@/constants/Colors';
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import { collection, doc, getDoc, onSnapshot, query, updateDoc, where } from "firebase/firestore";
 import React from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert, Linking, Modal, TextInput } from "react-native";
-import { collection, query, where, onSnapshot, updateDoc, doc, getDoc } from "firebase/firestore";
+import { ActivityIndicator, Alert, Linking, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { IconButton } from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { db } from "../../firebase";
 import { sendPushNotification } from "../../utils/notificationService";
 
@@ -62,9 +67,9 @@ export default function ManageWorkshop() {
             text: `Document ${idx + 1}`,
             onPress: () => Linking.openURL(url)
         }));
-        
+
         buttons.push({ text: "Cancel", style: "cancel" });
-        
+
         Alert.alert(
             "Review Documents",
             `This workshop has ${urls.length} documents. Which one would you like to inspect?`,
@@ -145,13 +150,27 @@ export default function ManageWorkshop() {
 
     return (
         <View style={styles.container}>
+            <LinearGradient
+                colors={[Colors.light.primary, Colors.light.secondary]}
+                style={styles.header}
+            >
+                <SafeAreaView style={styles.headerContent}>
+                    <View style={styles.headerTop}>
+                        <IconButton
+                            icon="arrow-left"
+                            iconColor="#fff"
+                            size={24}
+                            onPress={() => { router.back() }}
+                            style={{ position: 'fixed', left: -10 }}
+                        />
+                        <View style={styles.headerTitleContainer}>
+                            <Text style={styles.headerTitle}>Manage Workshop</Text>
+                            <Text style={styles.screenSubtitle}>Review submitted forms and files to verify workshop credibility.</Text>
+                        </View>
+                    </View>
+                </SafeAreaView>
+            </LinearGradient>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-
-                <View style={styles.headerContainer}>
-                    <Text style={styles.screenTitle}>Pending Registrations</Text>
-                    <Text style={styles.screenSubtitle}>Review submitted forms and files to verify workshop credibility.</Text>
-                </View>
-
                 {loading ? (
                     <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 60 }} />
                 ) : workshops.length === 0 ? (
@@ -303,7 +322,36 @@ export default function ManageWorkshop() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f6f8fb',
+        backgroundColor: '#edf3f9ff',
+    },
+    header: {
+        height: 180,
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
+    },
+    headerContent: {
+        paddingHorizontal: 20,
+    },
+    headerTop: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    headerTitleContainer: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        alignItems: 'flex-end',
+        pointerEvents: 'none',
+    },
+    headerTitle: {
+        color: '#e3faffdf',
+        fontFamily: 'SpaceMono-Bold',
+        fontSize: 28,
+        textTransform: 'uppercase',
+        textAlign: 'right',
+        marginTop: 48,
     },
     scrollContainer: {
         padding: 16,
@@ -313,20 +361,17 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         paddingHorizontal: 4,
     },
-    screenTitle: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#1e293b',
-    },
     screenSubtitle: {
         fontSize: 14,
-        color: '#64748b',
+        color: '#d1e9f2ff',
         marginTop: 6,
+        textAlign: 'right',
+        fontFamily: 'Inter-Light'
     },
 
     // Card
     card: {
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f5fcffff',
         borderRadius: 16,
         padding: 16,
         marginBottom: 14,
@@ -350,12 +395,13 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         textTransform: 'uppercase',
         letterSpacing: 0.5,
+        fontFamily: 'Inter-Regular'
     },
     orgName: {
-        fontSize: 17,
-        fontWeight: '700',
+        fontSize: 19,
         color: '#1e293b',
         marginBottom: 10,
+        fontFamily: 'SpaceMono-Bold'
     },
     detailRow: {
         flexDirection: 'row',
@@ -367,12 +413,14 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: '#64748b',
         width: 90,
+        fontFamily: 'Inter-Regular'
     },
     detailValue: {
         fontSize: 13,
         color: '#334155',
         flex: 1,
         fontWeight: '500',
+        fontFamily: 'Inter-Regular'
     },
     divider: {
         height: 1,
@@ -405,6 +453,7 @@ const styles = StyleSheet.create({
         color: '#ffffff',
         fontSize: 12,
         fontWeight: '700',
+        fontFamily: 'Inter-Regular'
     },
 
     // Pagination
@@ -431,6 +480,7 @@ const styles = StyleSheet.create({
         color: '#1e293b',
         fontWeight: '600',
         fontSize: 13,
+        fontFamily: 'Inter-Regular'
     },
     pageBtnTextDisabled: {
         color: '#94a3b8',
@@ -439,6 +489,7 @@ const styles = StyleSheet.create({
         color: '#64748b',
         fontSize: 13,
         fontWeight: '500',
+        fontFamily: 'Inter-Regular'
     },
 
     // Empty state
@@ -449,6 +500,7 @@ const styles = StyleSheet.create({
     emptyText: {
         color: '#94a3b8',
         fontSize: 16,
+        fontFamily: 'Inter-Regular'
     },
 
     // Modal Styles
