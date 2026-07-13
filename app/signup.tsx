@@ -37,6 +37,8 @@ const COMMON_FACILITIES = [
   'WiFi', 'Waiting Area', 'Prayer Room', 'Toilet', 'Cafe / Vending', 'Air Conditioning', 'Parking'
 ];
 
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
 export default function SignupScreen() {
   const [selectedFiles, setSelectedFiles] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -55,6 +57,12 @@ export default function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [showValidation, setShowValidation] = useState(false);
+  const [operatingDays, setOperatingDays] = useState<string[]>([]);
+  const [sameAllDays, setSameAllDays] = useState(true);
+  const [commonHours, setCommonHours] = useState({ open: '09:00', close: '18:00' });
+  const [perDayHours, setPerDayHours] = useState<Record<string, { open: string; close: string }>>(
+    Object.fromEntries(DAYS.map((d) => [d, { open: '09:00', close: '18:00' }]))
+  );
 
   // Handlers for launching file picker
   const selectFile = async () => {
@@ -110,6 +118,19 @@ export default function SignupScreen() {
     );
   };
 
+  const toggleDay = (day: string) => {
+    setOperatingDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
+  
+  const updateDayTime = (day: string, field: 'open' | 'close', value: string) => {
+    setPerDayHours((prev) => ({
+      ...prev,
+      [day]: { ...prev[day], [field]: value },
+    }));
+  };
+
   const handleGetLocation = async () => {
     setLoadingLocation(true);
     const loc = await getCurrentLocation();
@@ -148,6 +169,12 @@ export default function SignupScreen() {
           userData.address = address;
           userData.selectedServices = selectedServices;
           userData.facilities = facilities;
+          userData.operatingDays = operatingDays;
+          userData.operatingHours = {
+          sameAllDays,
+          common: commonHours,
+          perDay: perDayHours,
+        };
           userData.description = description;
           userData.verified = false;
           if (location) {
@@ -298,6 +325,7 @@ export default function SignupScreen() {
               left={<TextInput.Icon icon="phone-outline" color={Colors.light.primary} />}
             />
 
+              {/*ADDRESS*/}
             {role === 'bengkel' && (
               <View style={styles.bengkelFields}>
                 <TextInput
@@ -311,6 +339,7 @@ export default function SignupScreen() {
                   left={<TextInput.Icon icon="map-marker-outline" color={Colors.light.primary} />}
                 />
 
+              {/*MAP*/}
                 <TouchableOpacity
                   style={[styles.locationBtn, location ? styles.locationBtnSuccess : null]}
                   onPress={handleGetLocation}
@@ -328,6 +357,7 @@ export default function SignupScreen() {
                   )}
                 </TouchableOpacity>
 
+                  {/*SERVICE*/}
                 <Text variant="titleSmall" style={styles.sectionLabel}>Services Offered</Text>
                 <View style={styles.servicesGrid}>
                   {SERVICES.map((item) => (
@@ -350,6 +380,7 @@ export default function SignupScreen() {
                   ))}
                 </View>
 
+                  {/*FACILITIES*/}
                 <Text variant="titleSmall" style={styles.sectionLabel}>Facilities</Text>
                 <View style={styles.servicesGrid}>
                   {COMMON_FACILITIES.map((facility) => (
@@ -372,6 +403,90 @@ export default function SignupScreen() {
                   ))}
                 </View>
 
+                  {/*OPERATING DAYS*/}
+                <Text variant="titleSmall" style={styles.sectionLabel}>Operating Days</Text>
+                <View style={styles.servicesGrid}>
+                  {DAYS.map((day) => (
+                    <TouchableOpacity
+                      key={day}
+                      style={[
+                        styles.serviceItem,
+                        operatingDays.includes(day) && styles.serviceItemSelected
+                      ]}
+                      onPress={() => toggleDay(day)}
+                    >
+                      <Checkbox
+                        value={operatingDays.includes(day)}
+                        onValueChange={() => toggleDay(day)}
+                        color={operatingDays.includes(day) ? Colors.light.primary : undefined}
+                        style={styles.checkbox}
+                      />
+                      <Text style={styles.serviceLabel}>{day}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                  
+                <TouchableOpacity
+                  style={styles.toggleRow}
+                  onPress={() => setSameAllDays((v) => !v)}
+                >
+                  <Checkbox
+                    value={sameAllDays}
+                    onValueChange={() => setSameAllDays((v) => !v)}
+                    color={sameAllDays ? Colors.light.primary : undefined}
+                    style={styles.checkbox}
+                  />
+                  <Text style={{ marginLeft: 10 }}>Use the same hours every open day</Text>
+                </TouchableOpacity>
+
+                {sameAllDays ? (
+                  <View style={styles.timeRow}>
+                    <TextInput
+                      mode="outlined"
+                      label="Open"
+                      value={commonHours.open}
+                      onChangeText={(v) => setCommonHours((prev) => ({ ...prev, open: v }))}
+                      placeholder="09:00"
+                      style={styles.timeInput}
+                    />
+                    <TextInput
+                      mode="outlined"
+                      label="Close"
+                      value={commonHours.close}
+                      onChangeText={(v) => setCommonHours((prev) => ({ ...prev, close: v }))}
+                      placeholder="18:00"
+                      style={styles.timeInput}
+                    />
+                  </View>
+                ) : (
+                  operatingDays.map((day) => (
+                    <View key={day} style={styles.perDayRow}>
+                      <Text style={styles.dayLabel}>{day}</Text>
+                      <View style={styles.timeRow}>
+                        <TextInput
+                          mode="outlined"
+                          label="Open"
+                          value={perDayHours[day].open}
+                          onChangeText={(v) => updateDayTime(day, 'open', v)}
+                          placeholder="09:00"
+                          style={styles.timeInput}
+                        />
+                        <TextInput
+                          mode="outlined"
+                          label="Close"
+                          value={perDayHours[day].close}
+                          onChangeText={(v) => updateDayTime(day, 'close', v)}
+                          placeholder="18:00"
+                          style={styles.timeInput}
+                        />
+                      </View>
+                    </View>
+                  ))
+                )}
+
+                {/*DESCRIPTION BUSINESS*/}
+                <Text variant="titleSmall" style={styles.sectionLabel}>Description about Workshop</Text>
                 <TextInput
                   mode="outlined"
                   label="Business Description"
@@ -382,6 +497,7 @@ export default function SignupScreen() {
                   style={styles.input}
                 />
 
+                {/*PROFILE PICTURE WORKSHOP*/}
                 <Text style={styles.sectionLabel}>Workshop Profile Picture</Text>
                 <TouchableOpacity
                   style={[styles.profilePicBtn, showValidation && !profilePicture && styles.inputError]}
@@ -400,6 +516,7 @@ export default function SignupScreen() {
                   <Text style={styles.errorText}>Workshop profile picture is required</Text>
                 )}
 
+                {/*BUSINESS VERIFICATION*/}
                 <Text style={styles.sectionLabel}>Business Verification</Text>
                 <TouchableOpacity
                   style={[styles.uploadBtn, showValidation && selectedFiles.length === 0 && styles.inputError]}
@@ -650,5 +767,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     marginBottom: 8,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  timeInput: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    marginBottom: 12
+  },
+  perDayRow: {
+    marginBottom: 12,
+  },
+  dayLabel: {
+    fontWeight: '600',
+    marginBottom: 4,
+    color: '#0f172a',
   },
 });
