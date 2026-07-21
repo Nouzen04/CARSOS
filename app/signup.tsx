@@ -9,14 +9,30 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Href, router } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { deleteDoc, doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { useState } from "react";
-import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SegmentedButtons, Text, TextInput } from 'react-native-paper';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { auth, db, storage } from "../firebase";
 import { getAddressFromCoords, getCurrentLocation, toGeoPoint } from "../utils/mapService";
+
+
+const EMAILJS_SERVICE_ID = 'service_dvj5f4w';
+const EMAILJS_TEMPLATE_ID = 'template_dmf4rjw';
+const EMAILJS_PUBLIC_KEY = 'D18XRujlx96q2VUFL';
 
 interface Service {
   id: number;
@@ -38,6 +54,45 @@ const COMMON_FACILITIES = [
 ];
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+
+/** Generate a random 6-digit numeric OTP string. */
+const generateOtp = (): string =>
+  Math.floor(100000 + Math.random() * 900000).toString();
+
+const storeOtp = async (email: string, code: string): Promise<void> => {
+  const expiresAt = Timestamp.fromDate(new Date(Date.now() + 5 * 60 * 1000));
+  await setDoc(doc(db, 'otps', email.toLowerCase()), { code, expiresAt });
+};
+
+const sendOtpEmail = async (toEmail: string, code: string): Promise<void> => {
+  const expiryDate = new Date(Date.now() + 5 * 60 * 1000);
+  const time = expiryDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      service_id: EMAILJS_SERVICE_ID,
+      template_id: EMAILJS_TEMPLATE_ID,
+      user_id: EMAILJS_PUBLIC_KEY,
+      template_params: {
+        email: toEmail,
+        passcode: code,
+        time,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`EmailJS error (${response.status}): ${text}`);
+  }
+  console.log("Sending OTP email:", toEmail);
+  console.log("OTP:", code);
+};
+
+
 
 export default function SignupScreen() {
   const [selectedFiles, setSelectedFiles] = useState<any[]>([]);
@@ -64,7 +119,12 @@ export default function SignupScreen() {
     Object.fromEntries(DAYS.map((d) => [d, { open: '09:00', close: '18:00' }]))
   );
 
-  // Handlers for launching file picker
+  const [otpModalVisible, setOtpModalVisible] = useState(false);
+  const [otpInput, setOtpInput] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+
   const selectFile = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -81,7 +141,7 @@ export default function SignupScreen() {
       Alert.alert('Error', 'Failed to pick document');
       console.error('Error picking document:', error);
     }
-  }
+  };
 
   const removeFile = (index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
@@ -105,7 +165,6 @@ export default function SignupScreen() {
     }
   };
 
-
   const toggleService = (id: number) => {
     setSelectedServices(prev =>
       prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
@@ -123,7 +182,7 @@ export default function SignupScreen() {
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
     );
   };
-  
+
   const updateDayTime = (day: string, field: 'open' | 'close', value: string) => {
     setPerDayHours((prev) => ({
       ...prev,
@@ -146,6 +205,7 @@ export default function SignupScreen() {
     setLoadingLocation(false);
   };
 
+  // ─── Core account-creation logic (called after OTP passes for bengkel) ──
   const signUp = async () => {
     if (!email || !password || !role) {
       Alert.alert("Error", "Please fill in all required fields.");
@@ -164,6 +224,7 @@ export default function SignupScreen() {
           role: role,
           createdAt: new Date().toISOString(),
         };
+
         if (role === 'bengkel') {
           userData.name = workshopName;
           userData.address = address;
@@ -171,25 +232,16 @@ export default function SignupScreen() {
           userData.facilities = facilities;
           userData.operatingDays = operatingDays;
           userData.operatingHours = {
-          sameAllDays,
-          common: commonHours,
-          perDay: perDayHours,
-        };
+            sameAllDays,
+            common: commonHours,
+            perDay: perDayHours,
+          };
           userData.description = description;
           userData.verified = false;
           if (location) {
             userData.location = toGeoPoint(location);
           }
-          setShowValidation(true);
-          if (!profilePicture) {
-            Alert.alert("Missing Info", "Please select a workshop profile picture.");
-            return;
-          }
 
-          if (selectedFiles.length === 0) {
-            Alert.alert("Missing Info", "Please upload your business license.");
-            return;
-          }
           // Handle profile picture upload
           if (profilePicture) {
             setUploading(true);
@@ -201,14 +253,12 @@ export default function SignupScreen() {
               userData.profilePicture = await getDownloadURL(storageRef);
             } catch (uploadError) {
               console.error("Error uploading profile picture:", uploadError);
-              Alert.alert(
-                "Upload Failed",
-                "Profile picture could not be saved."
-              );
+              Alert.alert("Upload Failed", "Profile picture could not be saved.");
             } finally {
               setUploading(false);
             }
           }
+
           // Handle multi-file upload
           if (selectedFiles.length > 0) {
             setUploading(true);
@@ -235,8 +285,6 @@ export default function SignupScreen() {
 
         if (role === 'bengkel') {
           router.replace('/waitingVerification' as Href);
-          // } else if (role === 'admin') {
-          //   router.replace('/menuA' as Href);
         } else {
           router.replace('/menuP' as Href);
         }
@@ -245,20 +293,216 @@ export default function SignupScreen() {
       console.log(error);
       Alert.alert('Sign Up Failed', error.message);
     }
+  };
 
-    const handleSubmit = () => {
+  // ─── Validate bengkel fields before triggering OTP ─────────────────────
+  const validateBengkelFields = (): boolean => {
+    setShowValidation(true);
+    if (!email || !password) {
+      Alert.alert("Missing Info", "Please fill in your email and password.");
+      return false;
+    }
+    if (!profilePicture) {
+      Alert.alert("Missing Info", "Please select a workshop profile picture.");
+      return false;
+    }
+    if (selectedFiles.length === 0) {
+      Alert.alert("Missing Info", "Please upload your business license.");
+      return false;
+    }
+    return true;
+  };
 
+  // ─── Initiate OTP flow (generate → store → send → show modal) ──────────
+  const initiateOtp = async () => {
+    if (!validateBengkelFields()) return;
 
+    setOtpSending(true);
+    setOtpError('');
+    setOtpInput('');
 
+    try {
+      const code = generateOtp();
+      await storeOtp(email, code);
+      await sendOtpEmail(email, code);
+      setOtpModalVisible(true);
+    } catch (err: any) {
+      console.error('OTP send error:', err);
+      Alert.alert('OTP Error', `Could not send verification email. ${err.message ?? ''}`);
+    } finally {
+      setOtpSending(false);
+    }
+  };
 
-    };
-  }
+  /** Resend: generate a fresh code, overwrite the Firestore doc, resend email. */
+  const resendOtp = async () => {
+    setOtpSending(true);
+    setOtpError('');
+    setOtpInput('');
+
+    try {
+      const code = generateOtp();
+      await storeOtp(email, code);
+      await sendOtpEmail(email, code);
+      Alert.alert('Code Resent', 'A new verification code has been sent to your email.');
+    } catch (err: any) {
+      console.error('OTP resend error:', err);
+      Alert.alert('OTP Error', `Could not resend code. ${err.message ?? ''}`);
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  /** Verify the code entered by the user, then proceed with account creation. */
+  const verifyOtp = async () => {
+    if (otpInput.length !== 6) {
+      setOtpError('Please enter the full 6-digit code.');
+      return;
+    }
+
+    setOtpVerifying(true);
+    setOtpError('');
+
+    try {
+      const otpRef = doc(db, 'otps', email.toLowerCase());
+      const otpSnap = await getDoc(otpRef);
+
+      if (!otpSnap.exists()) {
+        setOtpError('Verification code not found. Please request a new one.');
+        setOtpVerifying(false);
+        return;
+      }
+
+      const { code, expiresAt } = otpSnap.data() as { code: string; expiresAt: Timestamp };
+
+      if (expiresAt.toDate() < new Date()) {
+        setOtpError('This code has expired. Please tap "Resend Code".');
+        setOtpVerifying(false);
+        return;
+      }
+
+      if (otpInput.trim() !== code) {
+        setOtpError('Incorrect code. Please try again.');
+        setOtpVerifying(false);
+        return;
+      }
+
+      // ✅ Code is valid — clean up and proceed
+      await deleteDoc(otpRef);
+      setOtpModalVisible(false);
+      setOtpInput('');
+      setOtpError('');
+
+      await signUp();
+    } catch (err: any) {
+      console.error('OTP verify error:', err);
+      setOtpError('Verification failed. Please try again.');
+    } finally {
+      setOtpVerifying(false);
+    }
+  };
+
+  /** Unified "Create Account" button handler — branches on role. */
+  const handleCreateAccount = () => {
+    if (role === 'bengkel') {
+      initiateOtp();
+    } else {
+      signUp();
+    }
+  };
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
+      {/* ─── OTP Verification Modal ─────────────────────────────────────── */}
+      <Modal
+        visible={otpModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setOtpModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <ModernCard style={styles.modalCard}>
+            {/* Header */}
+            <View style={styles.modalHeader}>
+              <LinearGradient
+                colors={[Colors.light.primary, '#a855f7']}
+                style={styles.modalIconBg}
+              >
+                <Feather name="mail" size={24} color="#ffffff" />
+              </LinearGradient>
+              <Text variant="titleLarge" style={styles.modalTitle}>Verify Your Email</Text>
+              <Text variant="bodyMedium" style={styles.modalSubtitle}>
+                We've sent a 6-digit code to{'\n'}
+                <Text style={styles.modalEmail}>{email}</Text>
+              </Text>
+            </View>
+
+            {/* OTP Input */}
+            <TextInput
+              mode="outlined"
+              label="6-Digit Code"
+              value={otpInput}
+              onChangeText={(v) => {
+                setOtpInput(v.replace(/[^0-9]/g, ''));
+                setOtpError('');
+              }}
+              keyboardType="numeric"
+              maxLength={6}
+              style={styles.otpInput}
+              left={<TextInput.Icon icon="shield-key-outline" color={Colors.light.primary} />}
+              outlineColor={otpError ? '#ef4444' : undefined}
+              activeOutlineColor={otpError ? '#ef4444' : Colors.light.primary}
+            />
+
+            {otpError !== '' && (
+              <Text style={styles.otpErrorText}>{otpError}</Text>
+            )}
+
+            {/* Verify button */}
+            <GradientButton
+              title={otpVerifying ? '' : 'Verify & Create Account'}
+              onPress={verifyOtp}
+              loading={otpVerifying}
+              style={styles.modalVerifyBtn}
+            />
+
+            {/* Resend & Cancel row */}
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                onPress={resendOtp}
+                disabled={otpSending}
+                style={styles.resendBtn}
+              >
+                {otpSending ? (
+                  <ActivityIndicator size="small" color={Colors.light.primary} />
+                ) : (
+                  <Text style={styles.resendText}>Resend Code</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  setOtpModalVisible(false);
+                  setOtpInput('');
+                  setOtpError('');
+                }}
+                style={styles.cancelBtn}
+              >
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text variant="bodySmall" style={styles.otpHint}>
+              Code expires in 5 minutes. Check your spam folder if you don't see it.
+            </Text>
+          </ModernCard>
+        </View>
+      </Modal>
+      {/* ──────────────────────────────────────────────────────────────── */}
+
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
         <LinearGradient
           colors={[Colors.light.primary, Colors.light.secondary]}
@@ -325,7 +569,7 @@ export default function SignupScreen() {
               left={<TextInput.Icon icon="phone-outline" color={Colors.light.primary} />}
             />
 
-              {/*ADDRESS*/}
+            {/*ADDRESS*/}
             {role === 'bengkel' && (
               <View style={styles.bengkelFields}>
                 <TextInput
@@ -339,7 +583,7 @@ export default function SignupScreen() {
                   left={<TextInput.Icon icon="map-marker-outline" color={Colors.light.primary} />}
                 />
 
-              {/*MAP*/}
+                {/*MAP*/}
                 <TouchableOpacity
                   style={[styles.locationBtn, location ? styles.locationBtnSuccess : null]}
                   onPress={handleGetLocation}
@@ -357,7 +601,7 @@ export default function SignupScreen() {
                   )}
                 </TouchableOpacity>
 
-                  {/*SERVICE*/}
+                {/*SERVICE*/}
                 <Text variant="titleSmall" style={styles.sectionLabel}>Services Offered</Text>
                 <View style={styles.servicesGrid}>
                   {SERVICES.map((item) => (
@@ -380,7 +624,7 @@ export default function SignupScreen() {
                   ))}
                 </View>
 
-                  {/*FACILITIES*/}
+                {/*FACILITIES*/}
                 <Text variant="titleSmall" style={styles.sectionLabel}>Facilities</Text>
                 <View style={styles.servicesGrid}>
                   {COMMON_FACILITIES.map((facility) => (
@@ -403,7 +647,7 @@ export default function SignupScreen() {
                   ))}
                 </View>
 
-                  {/*OPERATING DAYS*/}
+                {/*OPERATING DAYS*/}
                 <Text variant="titleSmall" style={styles.sectionLabel}>Operating Days</Text>
                 <View style={styles.servicesGrid}>
                   {DAYS.map((day) => (
@@ -426,7 +670,6 @@ export default function SignupScreen() {
                   ))}
                 </View>
 
-                  
                 <TouchableOpacity
                   style={styles.toggleRow}
                   onPress={() => setSameAllDays((v) => !v)}
@@ -550,11 +793,21 @@ export default function SignupScreen() {
               </View>
             )}
 
+            {/* OTP badge shown when bengkel role is selected */}
+            {role === 'bengkel' && (
+              <View style={styles.otpNotice}>
+                <Feather name="shield" size={14} color={Colors.light.primary} />
+                <Text style={styles.otpNoticeText}>
+                  Email verification required for workshop accounts
+                </Text>
+              </View>
+            )}
+
             <GradientButton
-              title="Create Account"
-              onPress={signUp}
+              title={otpSending ? '' : 'Create Account'}
+              onPress={handleCreateAccount}
               style={styles.button}
-              loading={uploading}
+              loading={uploading || otpSending}
             />
 
             <View style={styles.footer}>
@@ -781,7 +1034,7 @@ const styles = StyleSheet.create({
   timeInput: {
     flex: 1,
     backgroundColor: '#ffffff',
-    marginBottom: 12
+    marginBottom: 12,
   },
   perDayRow: {
     marginBottom: 12,
@@ -790,5 +1043,117 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 4,
     color: '#0f172a',
+  },
+
+  // ─── OTP notice badge ────────────────────────────────────────────────────
+  otpNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: Colors.light.primary + '12',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.light.primary + '30',
+  },
+  otpNoticeText: {
+    fontSize: 13,
+    color: Colors.light.primary,
+    fontWeight: '500',
+    flex: 1,
+  },
+
+  // ─── OTP Modal ───────────────────────────────────────────────────────────
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    padding: 28,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalIconBg: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  modalTitle: {
+    fontWeight: 'bold',
+    color: '#0f172a',
+    marginBottom: 6,
+  },
+  modalSubtitle: {
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  modalEmail: {
+    color: Colors.light.primary,
+    fontWeight: '600',
+  },
+  otpInput: {
+    backgroundColor: '#ffffff',
+    marginBottom: 4,
+    fontSize: 22,
+    letterSpacing: 8,
+    textAlign: 'center',
+  },
+  otpErrorText: {
+    color: '#ef4444',
+    fontSize: 13,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  modalVerifyBtn: {
+    marginTop: 16,
+    width: '100%',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 24,
+    marginTop: 20,
+  },
+  resendBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.light.primary,
+  },
+  resendText: {
+    color: Colors.light.primary,
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  cancelBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  cancelText: {
+    color: '#94a3b8',
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  otpHint: {
+    color: '#94a3b8',
+    textAlign: 'center',
+    marginTop: 16,
+    lineHeight: 18,
   },
 });

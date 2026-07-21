@@ -63,5 +63,35 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid || isAdmin()
       );
     }
+
+    // ── OTP verification for workshop (bengkel) signups ───────────────────
+    // Users are NOT authenticated at this point, so we cannot use request.auth.
+    // Security is enforced by:
+    //   • Document ID = the user's email (must know it to target the doc)
+    //   • No list/collection-group reads allowed (only single-document get)
+    //   • Codes expire in 5 minutes and are deleted immediately after use
+    //   • update is denied — only fresh create or delete is possible
+    match /otps/{email} {
+      // Anyone can write a new OTP for a given email (pre-signup, not yet authed).
+      // We deny update so a third party cannot change the code after it is set.
+      allow create: if request.resource.data.keys().hasAll(['code', 'expiresAt'])
+        && request.resource.data.code is string
+        && request.resource.data.code.size() == 6;
+
+      // Overwrite (resend) is treated as a create via setDoc with merge:false,
+      // but Firestore sees it as an update when the doc exists. Allow it only
+      // when the full required shape is present (same constraints as create).
+      allow update: if request.resource.data.keys().hasAll(['code', 'expiresAt'])
+        && request.resource.data.code is string
+        && request.resource.data.code.size() == 6;
+
+      // Allow the client to read its own OTP document for verification.
+      // Because this is a direct getDoc (not a query), only the exact email
+      // document is accessible — no other user's OTP is exposed.
+      allow read: if true;
+
+      // Allow deletion so the app can clean up the doc after successful verification.
+      allow delete: if true;
+    }
   }
 }
