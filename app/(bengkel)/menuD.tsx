@@ -73,7 +73,9 @@ const JobCard = ({ job, type, workshopLocation }: { job: any, type: 'incoming' |
                     {job.status.toUpperCase()}
                 </Text>
                 <Text variant="bodySmall" style={styles.timeText}>
-                    {job.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || 'N/A'}
+                    {typeof job.timestamp?.toDate === 'function'
+                        ? job.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : 'N/A'}
                 </Text>
             </View>
 
@@ -93,7 +95,7 @@ const JobCard = ({ job, type, workshopLocation }: { job: any, type: 'incoming' |
                         <MapComponent
                             bengkelLocation={workshopLocation}
                             driverLocation={job.pemanduLocation}
-                            bengkelName="Your Workshop"
+                            bengkelName={job.workshopName}
                         />
                     </View>
                 )}

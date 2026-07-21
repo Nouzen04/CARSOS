@@ -21,6 +21,11 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0F172A"
       },
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyB2zNod9hY-nTrApAFsAK9jOCqUqAosi2c"
+        }
+      },
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.CARSOS"
     },
