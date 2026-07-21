@@ -1,0 +1,49 @@
+module.exports = {
+  expo: {
+    name: "CARSOS",
+    slug: "CARSOS",
+    version: "1.0.0",
+    orientation: "portrait",
+    icon: "./assets/images/icon.png",
+    scheme: "carsos",
+    userInterfaceStyle: "light",
+    splash: {
+      image: "./assets/images/splash-icon.png",
+      resizeMode: "contain",
+      backgroundColor: "#0F172A"
+    },
+    ios: {
+      supportsTablet: true,
+      icon: "./assets/images/icon.png"
+    },
+    android: {
+      adaptiveIcon: {
+        foregroundImage: "./assets/images/adaptive-icon.png",
+        backgroundColor: "#0F172A"
+      },
+      config: {
+        googleMaps: {
+          apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY
+        }
+      },
+      predictiveBackGestureEnabled: false,
+      package: "com.anonymous.CARSOS"
+    },
+    web: {
+      bundler: "metro",
+      output: "static",
+      favicon: "./assets/images/favicon.png"
+    },
+    plugins: [
+      "expo-router",
+      "expo-font",
+      "expo-web-browser"
+    ],
+    updates: {
+      enabled: false
+    },
+    experiments: {
+      typedRoutes: true
+    }
+  }
+};
