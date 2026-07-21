@@ -5,7 +5,7 @@ import { BlurView } from 'expo-blur';
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function TabBarIcon(props: {
@@ -20,33 +20,35 @@ export default function BengkelLayout() {
     const insets = useSafeAreaInsets();
 
     return (
-        <Tabs
-            screenOptions={{
-                tabBarActiveTintColor: Colors[(colorScheme ?? 'light') as keyof typeof Colors].tint,
-            }}>
-            <Tabs.Screen
-                name="menuD"
-                options={{
-                    headerShown: false,
-                    title: 'Hi SNS Service',
-                    tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
-                }}
-            />
-            <Tabs.Screen
-                name="profile"
-                options={{
-                    headerShown: false,
-                    title: 'Profile',
-                    tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
-                }}
-            />
+        <View style={{ flex: 1 }}>
             <BlurView
                 intensity={10}
                 tint="light"
                 style={[styles.statusBarBackground, { height: insets.top }]}
             />
             <StatusBar style="dark" />
-        </Tabs>
+            <Tabs
+                screenOptions={{
+                    tabBarActiveTintColor: Colors[(colorScheme ?? 'light') as keyof typeof Colors].tint,
+                }}>
+                <Tabs.Screen
+                    name="menuD"
+                    options={{
+                        headerShown: false,
+                        title: 'Home',
+                        tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+                    }}
+                />
+                <Tabs.Screen
+                    name="profile"
+                    options={{
+                        headerShown: false,
+                        title: 'Profile',
+                        tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
+                    }}
+                />
+            </Tabs>
+        </View>
     );
 }
 

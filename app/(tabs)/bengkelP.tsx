@@ -44,7 +44,11 @@ export default function infoBengkel() {
                 setBengkelData(docSnap.data());
             } else {
                 Alert.alert("Error", "Workshop data not found.");
-                router.back();
+                if (router.canGoBack()) {
+                    router.back();
+                } else {
+                    router.replace('/menuP');
+                }
             }
         } catch (error) {
             console.error("Error fetching bengkel:", error);
